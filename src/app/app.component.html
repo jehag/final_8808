@@ -56,16 +56,17 @@
 <div class="dashboard">
   <div class="dashboard-title">
     <h1>Visualisation Zéro déchets du biodôme</h1>
-    <img *ngIf=!dashboardPage (click)="goToDashboard()" src="./../assets/leave.png" alt="controller">
   </div>
   <div class="main-buttons">
-    <a class="circle-link" title="Aller aux visualisations retrouvées sur le téléphone" (click)="goToPhone()" target="_blank" rel="noopener">
-      Visualisation portable
+    <a class="circle-link" (click)="findManData()" target="_blank" rel="noopener">
+      Homme de 60 ans
     </a>
-    <a class="circle-link" title="Aller aux visualisations projetées sur le mur" (click)="goToWall()" target="_blank" rel="noopener">
-      Visualisation murale
+    <a class="circle-link" (click)="findWomanData()" target="_blank" rel="noopener">
+      Femme de 25 ans
     </a>
   </div>
+  <app-phone value="user"></app-phone>
 </div>
+<script lang="javascript" src="https://cdn.sheetjs.com/xlsx-0.19.2/package/dist/xlsx.full.min.js"></script>
 
 <router-outlet></router-outlet>

@@ -1,30 +1,30 @@
-import { Component } from '@angular/core';
-import { Router } from '@angular/router';
+import { Component, OnInit } from '@angular/core';
+import { PreprocessService } from './services/preprocess.service';
+import * as d3 from 'd3';
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css']
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
   title = 'biodome-project';
-  dashboardPage = true;
+  user: string;
 
-  constructor(private router:Router){}
+  constructor(private preprocessService: PreprocessService){
+    this.user = "yo"
+  }
 
-  goToPhone() {
-    this.router.navigate(['/phone']);
-    this.dashboardPage = false;
+  async ngOnInit(){
+    this.preprocessService.readExcelFile()
   }
     
-  goToWall() {
-    this.router.navigate(['/wall']);
-    this.dashboardPage = false;
+  findManData() {
+    console.log("man")
   }
 
-  goToDashboard() {
-    this.router.navigate(['']);
-    this.dashboardPage = true;
+  findWomanData() {
+    console.log("Woman")
   }
 }
 
