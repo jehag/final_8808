@@ -1,1 +1,8 @@
-<p>phone works!</p>
+<mat-form-field appearance="fill">
+    <mat-label>Favorite food</mat-label>
+    <mat-select [(ngModel)]="selectedValue" name="food">
+        <mat-option *ngFor="let food of foods" [value]="food.value">
+        {{food.viewValue}}
+        </mat-option>
+    </mat-select>
+</mat-form-field>

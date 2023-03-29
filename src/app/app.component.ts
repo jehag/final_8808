@@ -12,11 +12,12 @@ export class AppComponent implements OnInit {
   user: string;
 
   constructor(private preprocessService: PreprocessService){
-    this.user = "yo"
+    this.user = "yo";
   }
 
   async ngOnInit(){
-    this.preprocessService.readExcelFile()
+    await this.preprocessService.readExcelData();
+    await this.preprocessService.readExcelQuestions()
   }
     
   findManData() {
