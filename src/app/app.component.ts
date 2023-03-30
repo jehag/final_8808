@@ -9,23 +9,13 @@ import * as d3 from 'd3';
 })
 export class AppComponent implements OnInit {
   title = 'biodome-project';
-  user: string;
 
   constructor(private preprocessService: PreprocessService){
-    this.user = "yo";
   }
 
   async ngOnInit(){
     await this.preprocessService.readExcelData();
     await this.preprocessService.readExcelQuestions()
-  }
-    
-  findManData() {
-    console.log("man")
-  }
-
-  findWomanData() {
-    console.log("Woman")
   }
 }
 

@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { QuestionData } from '../interfaces/question-data';
 import { PreprocessService } from './../services/preprocess.service';
 
 @Component({
@@ -8,9 +9,27 @@ import { PreprocessService } from './../services/preprocess.service';
 })
 export class PhoneComponent implements OnInit {
 
-  constructor() { }
+  selectedQuestion: string = "";
+  characterChosen: boolean = false;
+  user: any = null;
+
+  constructor(private preprocessService: PreprocessService) {}
 
   ngOnInit(): void {
+  }
+
+  get questions(){
+    return this.preprocessService.questionsList;
+  }
+
+  findUserData(man: boolean) {
+    console.log('allo')
+    this.characterChosen = true;
+    this.user = this.preprocessService.getUserData(man);
+  }
+
+  createGraph(){
+    let questionData: QuestionData[] = this.preprocessService.getQuestionData(this.selectedQuestion);
   }
 
 }
