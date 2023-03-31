@@ -13,7 +13,7 @@ export class PreprocessService {
   excelQuestions: any[] = [];
   processedExcelQuestions: ExcelQuestions[] = [];
   questionsList: string[] = [];
-  formattedQuestionsList: [] = [];
+  formattedQuestions: ExcelQuestions[] = [];
 
   constructor(private http: HttpClient) {
   }
@@ -57,10 +57,8 @@ export class PreprocessService {
         let j = i + 2;
         let splitQuestion = this.excelQuestions[j]["__EMPTY_1"].split(":");
         for(let k = 1; k < splitQuestion.length; k++){
-          excelQuestion.question += this.excelQuestions[j]["__EMPTY_1"].split(":")[k];
-        }
-        if(this.isEnvironmentalQuestion(excelQuestion.symbol)){
-          this.questionsList.push(excelQuestion.question);
+          //excelQuestion.question += this.excelQuestions[j]["__EMPTY_1"].split(":")[k];
+          excelQuestion.question += splitQuestion[k];
         }
 
         j++;
@@ -90,7 +88,33 @@ export class PreprocessService {
     return false;
   }
 
-  formatQuestionsList(){}
+  formatQuestions(){
+    for(let i = 0; i < this.processedExcelQuestions.length; i++){
+      let excelQuestion: ExcelQuestions = {
+        "symbol": "",
+        "question": "",
+        "choices": new Map() 
+      };
+      if(this.isEnvironmentalQuestion(excelQuestion.symbol)){
+        if(this.processedExcelQuestions[i].choices.get(0) && this.processedExcelQuestions[i].choices.get(0)?.includes('NO TO')){
+          let splitQuestion = this.processedExcelQuestions[i].question.split('-');
+          for(let k = 1; k < splitQuestion.length; k++){
+            excelQuestion.question += splitQuestion[k];
+          }
+          let symbolStart = excelQuestion.symbol.split('r')[0];
+          excelQuestion.symbol = symbolStart;
+          let j = 0;
+          while(this.processedExcelQuestions[i].symbol.includes(symbolStart)){
+            excelQuestion.choices.set(j, this.processedExcelQuestions[i].choices.get(1)!)
+            j++;
+            i++;
+          }
+          this.formattedQuestions.push(excelQuestion);
+        }
+        this.formattedQuestions.push(this.processedExcelQuestions[i]);
+      }
+    }
+  }
 
   getUserData(man:boolean){
     let data;
