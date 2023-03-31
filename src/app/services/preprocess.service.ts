@@ -40,6 +40,8 @@ export class PreprocessService {
         const excelData: any[] = XLSX.utils.sheet_to_json(worksheet, {raw: true});
         this.excelQuestions = excelData;
         this.processQuestions();
+        this.formatQuestions();
+        console.log(this.formattedQuestions);
       });
   }
 
@@ -57,9 +59,12 @@ export class PreprocessService {
         let j = i + 2;
         let splitQuestion = this.excelQuestions[j]["__EMPTY_1"].split(":");
         for(let k = 1; k < splitQuestion.length; k++){
-          //excelQuestion.question += this.excelQuestions[j]["__EMPTY_1"].split(":")[k];
           excelQuestion.question += splitQuestion[k];
+          if(k < splitQuestion.length - 1){
+            excelQuestion.question += " : "
+          }
         }
+        excelQuestion.question = excelQuestion.question.substring(1);
 
         j++;
 
@@ -78,10 +83,9 @@ export class PreprocessService {
   }
 
   isEnvironmentalQuestion(symbol:string): boolean{
-    let firstLetters:string = symbol[0] + symbol[1];
-    for(let i = 2; i < 10; i++){
+    for(let i = 2; i <= 18; i++){
       let correctLetters: string = 'Q' + i;
-      if(firstLetters == correctLetters){
+      if(symbol.includes(correctLetters)){
         return true;
       }
     }
@@ -95,25 +99,51 @@ export class PreprocessService {
         "question": "",
         "choices": new Map() 
       };
-      if(this.isEnvironmentalQuestion(excelQuestion.symbol)){
+
+      if(this.isEnvironmentalQuestion(this.processedExcelQuestions[i].symbol)){
         if(this.processedExcelQuestions[i].choices.get(0) && this.processedExcelQuestions[i].choices.get(0)?.includes('NO TO')){
-          let splitQuestion = this.processedExcelQuestions[i].question.split('-');
-          for(let k = 1; k < splitQuestion.length; k++){
-            excelQuestion.question += splitQuestion[k];
-          }
-          let symbolStart = excelQuestion.symbol.split('r')[0];
-          excelQuestion.symbol = symbolStart;
-          let j = 0;
-          while(this.processedExcelQuestions[i].symbol.includes(symbolStart)){
-            excelQuestion.choices.set(j, this.processedExcelQuestions[i].choices.get(1)!)
-            j++;
-            i++;
-          }
-          this.formattedQuestions.push(excelQuestion);
+          let pair = this.fixNoToQuestions(i);
+          excelQuestion = pair[0];
+          i = pair[1];
+        } else {
+          excelQuestion = this.processedExcelQuestions[i];
         }
-        this.formattedQuestions.push(this.processedExcelQuestions[i]);
+        this.formattedQuestions.push(excelQuestion);
+        this.questionsList.push(excelQuestion.question);
       }
     }
+  }
+
+  fixNoToQuestions(i: number) : [ExcelQuestions, number] {
+    let excelQuestion: ExcelQuestions = {
+      "symbol": "",
+      "question": "",
+      "choices": new Map() 
+    };
+    let splitQuestion = this.processedExcelQuestions[i].question.split('-');
+    for(let k = 1; k < splitQuestion.length; k++){
+      excelQuestion.question += splitQuestion[k];
+      if(k < splitQuestion.length - 1){
+        excelQuestion.question += "-"
+      }
+    }
+    excelQuestion.question = excelQuestion.question.substring(1);
+    
+    let symbolStart = this.processedExcelQuestions[i].symbol.substring(0, this.processedExcelQuestions[i].symbol.indexOf('r'));
+    excelQuestion.symbol = symbolStart;
+    
+    let j = 0;
+    while(this.processedExcelQuestions[i] && this.processedExcelQuestions[i].symbol.includes(symbolStart)){
+      for(let choice of this.processedExcelQuestions[i].choices.entries()){
+        if(choice[0] != 0){
+          excelQuestion.choices.set(j, choice[1]);
+        }
+      }
+      j++;
+      i++;
+    }
+
+    return [excelQuestion, i];
   }
 
   getUserData(man:boolean){
