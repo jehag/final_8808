@@ -8,9 +8,18 @@
 </div>
 <mat-form-field *ngIf="characterChosen" appearance="fill">
     <mat-label>Choisissez une question</mat-label>
-    <mat-select [(ngModel)]="selectedQuestion" (ngModelChange)='createGraph()'>
+    <mat-select [(ngModel)]="selectedQuestion" (ngModelChange)='getQuestionData()'>
       <mat-option *ngFor="let question of questions" [value]="question">
         {{question}}
       </mat-option>
     </mat-select>
+</mat-form-field>
+
+<mat-form-field *ngIf="isThemeQuestion" appearance="fill">
+  <mat-label>Choisissez une question</mat-label>
+  <mat-select [(ngModel)]="selectedSubQuestion" (ngModelChange)='getSubQuestionData()'>
+    <mat-option *ngFor="let question of themeQuestionsList" [value]="question">
+      {{question}}
+    </mat-option>
+  </mat-select>
 </mat-form-field>
