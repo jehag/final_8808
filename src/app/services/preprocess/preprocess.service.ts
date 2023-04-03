@@ -1,8 +1,9 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import * as XLSX from 'xlsx';
-import { ExcelQuestions } from '../interfaces/excel-questions';
-import { QuestionData } from '../interfaces/question-data';
+import { ExcelQuestions } from '../../interfaces/excel-questions';
+import { QuestionData } from '../../interfaces/question-data';
+import { CheckboxChoices } from '../../interfaces/checkbox-choices';
 
 @Injectable({
   providedIn: 'root'
@@ -112,6 +113,7 @@ export class PreprocessService {
         } else {
           excelQuestion = this.processedExcelQuestions[i];
         }
+        excelQuestion.savedSymbol = this.processedExcelQuestions[i].symbol;
         this.formattedQuestions.push(excelQuestion);
         this.questionsList.push(excelQuestion.question);
       }
@@ -199,14 +201,22 @@ export class PreprocessService {
     return data;
   }
 
-  getQuestionData(questionName:string) : QuestionData[] {
+  getQuestionData(questionName:string, user: any, checkboxChoices: CheckboxChoices) : QuestionData[] {
+    if(questionName == 'could not find subQuestion' || questionName == 'could not find question'){
+      return [];
+    }
+
     let data:QuestionData[] = [];
 
     const question = this.processedExcelQuestions.find((question) => {
-      return question.question == questionName
+      return question.question == questionName;
     });
 
-    let labelData: Map<number,number> = this.getLabelData(question!);
+    if(!question){
+      return [];
+    }
+
+    let labelData: Map<number,number> = this.getLabelData(question, user, checkboxChoices);
 
     let sumOfValues: number = 0;
     for(let value of labelData.values()){
@@ -218,22 +228,35 @@ export class PreprocessService {
         "label": "",
         "value": 0
       };
-      questionData.label = question!.choices.get(entry[0])!;
+      questionData.label = question.choices.get(entry[0])!;
       questionData.value = (entry[1] / sumOfValues) * 100;
       data.push(questionData);
+    }
+
+    if(question.choices.size != data.length){
+      question.choices.forEach((choice) => {
+        let questionFound: QuestionData | undefined = data.find((questionData) => {
+          return questionData.label == choice;
+        })
+        if(!questionFound){
+          data.push({
+            "label": choice,
+            "value": 0
+          })
+        }
+      })
     }
 
 
     return data;
   }
 
-  getLabelData(question: ExcelQuestions): Map<number,number> {
+  getLabelData(question: ExcelQuestions, user: any, checkboxChoices: CheckboxChoices): Map<number,number> {
     let labelData: Map<number,number> = new Map<number, number>();
     if(question){
       const symbol = question.symbol;
       this.excelData.forEach((row) => {
-        if(row[symbol]){
-          //add les crochets ici
+        if(row[symbol] && this.checkForChecks(row, user, checkboxChoices)){
           if(labelData.has(row[symbol])){
             let currentValue = labelData.get(row[symbol])!;
             labelData.set(row[symbol], currentValue + 1);
@@ -245,6 +268,35 @@ export class PreprocessService {
     }
     return labelData;
   } 
+
+  checkForChecks(row: any, user: any, checkboxChoices: CheckboxChoices): boolean {
+    if(checkboxChoices.myAge && this.checkIfSameSituation(row, user, 'age')){
+      return false;
+    }
+    if(checkboxChoices.myCivilState && this.checkIfSameSituation(row, user, 'ETAT')){
+      return false;
+    }
+    if(checkboxChoices.myGender && this.checkIfSameSituation(row, user, 'sexe')){
+      return false;
+    }
+    if(checkboxChoices.myLanguage && this.checkIfSameSituation(row, user, 'LANGU')){
+      return false;
+    }
+    if(checkboxChoices.myMoney && this.checkIfSameSituation(row, user, 'REVEN')){
+      return false;
+    }
+    if(checkboxChoices.myProvince && this.checkIfSameSituation(row, user, 'PROV')){
+      return false;
+    }
+    if(checkboxChoices.myScolarity && this.checkIfSameSituation(row, user, 'SCOL')){
+      return false;
+    }
+    return true;
+  }
+
+  checkIfSameSituation(row: any, user: any, situation:string){
+    return row[situation] == user[situation];
+  }
 
   getFormattedSymbolWithQuestion(questionName: string): string{
     const question = this.formattedQuestions.find((question) => {
@@ -272,7 +324,7 @@ export class PreprocessService {
     return themeQuestions;
   }
 
-  getNoToQuestionData(symbolStart: string): QuestionData[] {
+  getNoToQuestionData(symbolStart: string, user: any, checkboxChoices: CheckboxChoices): QuestionData[] {
     let questions: ExcelQuestions[] = [];
     this.processedExcelQuestions.forEach((question) => {
       if(this.isEnvironmentalQuestion(question.symbol) && question.symbol.includes(symbolStart)){
@@ -283,7 +335,7 @@ export class PreprocessService {
     let questionDataList:QuestionData[] = [];
     let sumOfValues = 0;
     questions.forEach((question) => {
-      let labelData: Map<number, number> = this.getLabelData(question);
+      let labelData: Map<number, number> = this.getLabelData(question, user, checkboxChoices);
       for(let data of labelData.values()){
         sumOfValues += data;
         questionDataList.push({
@@ -292,6 +344,20 @@ export class PreprocessService {
         })
       }
     })
+
+    if(questions.length != questionDataList.length){
+      questions.forEach((question) => {
+        let questionFound: QuestionData | undefined = questionDataList.find((questionData) => {
+          return questionData.label == question.question.split(' - ')[0];
+        })
+        if(!questionFound){
+          questionDataList.push({
+            "label": question.question.split(' - ')[0],
+            "value": 0
+          })
+        }
+      })
+    }
 
     for(let i = 0; i < questionDataList.length; i++){
       questionDataList[i].value = (questionDataList[i].value / sumOfValues) * 100;
@@ -313,5 +379,35 @@ export class PreprocessService {
       return 'could not find subQuestion';
     }
     return 'could not find question';
+  }
+
+  getProcessedSymbolWithFormattedQuestion(questionName: string): string {
+    const question = this.formattedQuestions.find((question) => {
+      return question.question == questionName
+    });
+
+    if(question){
+      return this.processedExcelQuestions.find((processedQuestion) => {
+        return processedQuestion.symbol == question.savedSymbol
+      })?.symbol!;
+    } 
+    return 'Unknown Question';
+  }
+
+  getProcessedSymbolWithSubQuestionName(questionName: string): string{
+    const question = this.processedExcelQuestions.find((question) => {
+      return question.question == questionName
+    });
+    return question? question.symbol: 'unknown question'
+  }
+
+  getChoiceFromData(symbol: string, value: number) : string{
+    const question = this.processedExcelQuestions.find((question) => {
+      return question.symbol == symbol;
+    })
+    if(question){
+      return question.choices.get(value)!;
+    }
+    return 'Unknown Question';
   }
 }

@@ -11,6 +11,7 @@ import { AppComponent } from './app.component';
 import { PhoneComponent } from './phone/phone.component';
 import { WallComponent } from './wall/wall.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 
 
 @NgModule({
@@ -27,6 +28,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
     MatFormFieldModule,
     MatSelectModule,
     FormsModule, 
+    MatCheckboxModule,
   ],
   providers: [],
   bootstrap: [AppComponent]

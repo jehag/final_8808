@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { PreprocessService } from './services/preprocess.service';
+import { PreprocessService } from './services/preprocess/preprocess.service';
 import * as d3 from 'd3';
 
 @Component({
