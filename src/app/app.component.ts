@@ -9,6 +9,7 @@ import * as d3 from 'd3';
 })
 export class AppComponent implements OnInit {
   title = 'biodome-project';
+  showingPhone: boolean = true;
 
   constructor(private preprocessService: PreprocessService){
   }
@@ -16,6 +17,10 @@ export class AppComponent implements OnInit {
   async ngOnInit(){
     await this.preprocessService.readExcelData();
     await this.preprocessService.readExcelQuestions()
+  }
+
+  showPhone(phone:boolean){
+    this.showingPhone = phone;
   }
 }
 
