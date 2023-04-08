@@ -67,12 +67,12 @@ export class PhoneComponent implements OnInit {
     } else if (symbol.includes('n')) {
       this.isThemeQuestion = false;
       let questionData: QuestionData[] = this.preprocessService.getNoToQuestionData(symbol.substring(0, symbol.indexOf('n')), this.user, this.checkboxChoices);
-      let processedSymbol = this.preprocessService.getProcessedSymbolWithFormattedQuestion(this.selectedQuestion);
+      let processedSymbol = this.preprocessService.getUserProcessedSymbolWithFormattedQuestion(this.selectedQuestion, this.user);
       this.createGraph(questionData, this.selectedQuestion, processedSymbol);
     } else {
       this.isThemeQuestion = false;
       let questionData: QuestionData[] = this.preprocessService.getQuestionData(this.selectedQuestion, this.user, this.checkboxChoices);
-      let processedSymbol = this.preprocessService.getProcessedSymbolWithFormattedQuestion(this.selectedQuestion);
+      let processedSymbol = this.preprocessService.getUserProcessedSymbolWithFormattedQuestion(this.selectedQuestion, this.user);
       this.createGraph(questionData, this.selectedQuestion, processedSymbol);
     }
   }

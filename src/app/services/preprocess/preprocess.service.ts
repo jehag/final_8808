@@ -367,15 +367,22 @@ export class PreprocessService {
     return 'could not find question';
   }
 
-  getProcessedSymbolWithFormattedQuestion(questionName: string): string {
+  getUserProcessedSymbolWithFormattedQuestion(questionName: string, user: any): string {
     const question = this.formattedQuestions.find((question) => {
       return question.question == questionName
     });
 
     if(question){
-      return this.processedExcelQuestions.find((processedQuestion) => {
-        return processedQuestion.symbol == question.savedSymbol
-      })?.symbol!;
+      if(user[question.savedSymbol!] != 0){
+        return this.processedExcelQuestions.find((processedQuestion) => {
+          return processedQuestion.symbol == question.savedSymbol
+        })?.symbol!;
+      } else {
+        let symbolStart = question.savedSymbol!.substring(0, question.savedSymbol!.indexOf('r'));
+        return this.processedExcelQuestions.find((processedQuestion) => {
+          return (processedQuestion.symbol.includes(symbolStart) && user[processedQuestion.symbol] != 0)
+        })?.symbol!;
+      }
     } 
     return 'Unknown Question';
   }
