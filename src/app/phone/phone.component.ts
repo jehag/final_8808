@@ -62,6 +62,8 @@ export class PhoneComponent implements OnInit {
     if(symbol.includes('r')){
       this.themeQuestionsList = this.preprocessService.getThemeQuestions(symbol);
       this.isThemeQuestion = true;
+      this.selectedSubQuestion = this.themeQuestionsList[0];
+      this.getSubQuestionData();
     } else if (symbol.includes('n')) {
       this.isThemeQuestion = false;
       let questionData: QuestionData[] = this.preprocessService.getNoToQuestionData(symbol.substring(0, symbol.indexOf('n')), this.user, this.checkboxChoices);
@@ -78,7 +80,7 @@ export class PhoneComponent implements OnInit {
   getSubQuestionData() {
     let subQuestionName: string = this.preprocessService.getSubQuestionRealName(this.selectedQuestion, this.selectedSubQuestion);
     let questionData: QuestionData[] = this.preprocessService.getQuestionData(subQuestionName, this.user, this.checkboxChoices);
-    this.createGraph(questionData, subQuestionName, this.preprocessService.getProcessedSymbolWithSubQuestionName(subQuestionName));
+    this.createGraph(questionData, this.selectedQuestion, this.preprocessService.getProcessedSymbolWithSubQuestionName(subQuestionName));
   }
 
   createGraph(questionData: QuestionData[], questionName: string, symbol: string){
@@ -88,7 +90,7 @@ export class PhoneComponent implements OnInit {
       top: 75,
       right: 200,
       bottom: 100,
-      left: 80
+      left: 150
     }
 
     let svgSize = {

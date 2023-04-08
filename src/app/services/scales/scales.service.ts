@@ -27,7 +27,7 @@ export class ScalesService {
   setColorScale (data: QuestionData[], userChoice: string) {
     // const colorScale = d3.scaleOrdinal(d3.schemeSet1)
     const labels = Object.values(data.map(d => d.label));
-    const colorScale = d3.scaleOrdinal(["Moi", "Autres"], d3.schemeCategory10)
+    const colorScale = d3.scaleOrdinal(["Moi", "Autres"], ['orange, green'])
     return colorScale;
   }
 }

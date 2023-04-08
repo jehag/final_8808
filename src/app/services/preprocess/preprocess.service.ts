@@ -216,7 +216,15 @@ export class PreprocessService {
       return [];
     }
 
+    question.choices.forEach((choice) => {
+      data.push({
+        "label": choice,
+        "value": 0
+      })
+    })
+
     let labelData: Map<number,number> = this.getLabelData(question, user, checkboxChoices);
+
 
     let sumOfValues: number = 0;
     for(let value of labelData.values()){
@@ -224,30 +232,12 @@ export class PreprocessService {
     }
 
     for(let entry of labelData.entries()){
-      let questionData:QuestionData = {
-        "label": "",
-        "value": 0
-      };
-      questionData.label = question.choices.get(entry[0])!;
-      questionData.value = (entry[1] / sumOfValues) * 100;
-      data.push(questionData);
-    }
-
-    if(question.choices.size != data.length){
-      question.choices.forEach((choice) => {
-        let questionFound: QuestionData | undefined = data.find((questionData) => {
-          return questionData.label == choice;
-        })
-        if(!questionFound){
-          data.push({
-            "label": choice,
-            "value": 0
-          })
+      for(let i = 0; i < data.length; i++){
+        if(data[i].label == question.choices.get(entry[0])){
+          data[i].value = (entry[1] / sumOfValues) * 100;
         }
-      })
+      }
     }
-
-
     return data;
   }
 
@@ -334,30 +324,26 @@ export class PreprocessService {
 
     let questionDataList:QuestionData[] = [];
     let sumOfValues = 0;
+
+    questions.forEach((question) => {
+      questionDataList.push({
+        "label": question.question.split(' - ')[0],
+        "value": 0
+      })
+    })
+      
     questions.forEach((question) => {
       let labelData: Map<number, number> = this.getLabelData(question, user, checkboxChoices);
       for(let data of labelData.values()){
         sumOfValues += data;
-        questionDataList.push({
-          "label": question.question.split(' - ')[0],
-          "value": data
-        })
+        for(let i = 0; i < questionDataList.length; i++){
+          if(questionDataList[i].label == question.question.split(' - ')[0]){
+            questionDataList[i].value = data;
+          }
+        }
       }
     })
 
-    if(questions.length != questionDataList.length){
-      questions.forEach((question) => {
-        let questionFound: QuestionData | undefined = questionDataList.find((questionData) => {
-          return questionData.label == question.question.split(' - ')[0];
-        })
-        if(!questionFound){
-          questionDataList.push({
-            "label": question.question.split(' - ')[0],
-            "value": 0
-          })
-        }
-      })
-    }
 
     for(let i = 0; i < questionDataList.length; i++){
       questionDataList[i].value = (questionDataList[i].value / sumOfValues) * 100;

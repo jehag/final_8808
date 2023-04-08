@@ -41,12 +41,42 @@ export class VizService {
   }
 
   placeTitle (g: any, title: string, width: number) {
-    g.append('text')
+    if(title.length > 60){
+
+      let words: string[] = title.split(' ');
+      let i: number = 0;
+      let j: number = -55;
+      while(i <= words.length - 1){
+        let line: string = words[i];
+        i++;
+        while(line.length < 60 && i <= words.length - 1){
+          line = line + ' ' + words[i];
+          i++;
+        }
+
+        if(words[i] && words[i].match(/[.,:!?]/)){
+          line += words[i];
+          i++;
+        }
+
+        g.append('text')
+        .attr('class', 'title')
+        .attr('x', width/2)
+        .attr('y', j)
+        .attr('font-size', '20px')
+        .attr('text-anchor', 'middle')
+        .text(line)
+        j = j + 20;
+      }
+    } else {
+      g.append('text')
       .attr('class', 'title')
       .attr('x', width/2)
       .attr('y', -20)
-      .attr('font-size', 20)
+      .attr('font-size', '20px')
+      .attr('text-anchor', 'middle')
       .text(title)
+    }
   }
 
   positionLabels (g: any, width: number, height: number) {
@@ -93,7 +123,7 @@ export class VizService {
       .enter().append("rect")
       .attr("class", "bar")
       .attr("y", function(d: QuestionData) { return yScale(d.label); })
-      .style('fill', function (d: QuestionData) { return d.label == userChoice? 'orange': 'blue'; })
+      .style('fill', function (d: QuestionData) { return d.label == userChoice? 'orange': 'green'; })
       .attr("width", function(d: QuestionData) { return xScale(d.value); })
       .attr("height", yScale.bandwidth());
   }
