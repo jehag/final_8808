@@ -27,15 +27,20 @@
   </mat-form-field>
 </div>
 
-<div class="checkboxes">
-  <h3>Je veux me comparer aux répondants de :</h3>
-  <mat-checkbox class="checkbox" [(ngModel)]="checkboxChoices.myGender" (ngModelChange)='checkBoxChanged()'><h3 class="checkbox-label">Mon genre</h3></mat-checkbox>
-  <mat-checkbox class="checkbox" [(ngModel)]="checkboxChoices.myProvince" (ngModelChange)='checkBoxChanged()'><h3 class="checkbox-label">Ma province</h3></mat-checkbox>
-  <mat-checkbox class="checkbox" [(ngModel)]="checkboxChoices.myAge" (ngModelChange)='checkBoxChanged()'><h3 class="checkbox-label">Ma tranche d'âge</h3></mat-checkbox>
-  <mat-checkbox class="checkbox" [(ngModel)]="checkboxChoices.myScolarity" (ngModelChange)='checkBoxChanged()'><h3 class="checkbox-label">Mon niveau de scolarité</h3></mat-checkbox>
-  <mat-checkbox class="checkbox" [(ngModel)]="checkboxChoices.myLanguage" (ngModelChange)='checkBoxChanged()'><h3 class="checkbox-label">Ma langue première</h3></mat-checkbox>
-  <mat-checkbox class="checkbox" [(ngModel)]="checkboxChoices.myMoney" (ngModelChange)='checkBoxChanged()'><h3 class="checkbox-label">Mon revenu</h3></mat-checkbox>
-  <mat-checkbox class="checkbox" [(ngModel)]="checkboxChoices.myCivilState" (ngModelChange)='checkBoxChanged()'><h3 class="checkbox-label">Mon état civil</h3></mat-checkbox>
+<div>
+
+  <div class="checkboxes">
+    <h3>Je veux me comparer aux répondants de :</h3>
+    <mat-checkbox class="checkbox" [(ngModel)]="checkboxChoices.myGender" (ngModelChange)='checkBoxChanged()'><h3 class="checkbox-label">Mon genre</h3></mat-checkbox>
+    <mat-checkbox class="checkbox" [(ngModel)]="checkboxChoices.myProvince" (ngModelChange)='checkBoxChanged()'><h3 class="checkbox-label">Ma province</h3></mat-checkbox>
+    <mat-checkbox class="checkbox" [(ngModel)]="checkboxChoices.myAge" (ngModelChange)='checkBoxChanged()'><h3 class="checkbox-label">Ma tranche d'âge</h3></mat-checkbox>
+    <mat-checkbox class="checkbox" [(ngModel)]="checkboxChoices.myScolarity" (ngModelChange)='checkBoxChanged()'><h3 class="checkbox-label">Mon niveau de scolarité</h3></mat-checkbox>
+    <mat-checkbox class="checkbox" [(ngModel)]="checkboxChoices.myLanguage" (ngModelChange)='checkBoxChanged()'><h3 class="checkbox-label">Ma langue première</h3></mat-checkbox>
+    <mat-checkbox class="checkbox" [(ngModel)]="checkboxChoices.myMoney" (ngModelChange)='checkBoxChanged()'><h3 class="checkbox-label">Mon revenu</h3></mat-checkbox>
+    <mat-checkbox class="checkbox" [(ngModel)]="checkboxChoices.myCivilState" (ngModelChange)='checkBoxChanged()'><h3 class="checkbox-label">Mon état civil</h3></mat-checkbox>
+    <mat-checkbox class="checkbox" [(ngModel)]="checkboxChoices.myVrac" (ngModelChange)='checkBoxChanged()'><h3 class="checkbox-label">Mes habitudes de vrac</h3></mat-checkbox>
+  </div>
+  <h3 *ngIf="isShowingGraph">Nombre de réponses dans cette catégorie : {{this.amountOfData}} </h3>
 </div>
 
 <div class='graph'>

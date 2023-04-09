@@ -17,7 +17,7 @@ export class ScalesService {
  * @returns {*} The linear scale in X
  */
   setXScale (width: number) {
-    return d3.scaleLinear().domain([0, 80]).range([0, width]);
+    return d3.scaleLinear().domain([0, 100]).range([0, width]);
   }
 
   setYScale (height: number, data: QuestionData[]) {

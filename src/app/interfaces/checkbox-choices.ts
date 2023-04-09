@@ -6,4 +6,5 @@ export interface CheckboxChoices {
     myLanguage: boolean,
     myMoney: boolean,
     myCivilState: boolean
+    myVrac: boolean
 }

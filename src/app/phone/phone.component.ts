@@ -20,6 +20,7 @@ export class PhoneComponent implements OnInit {
   selectedSubQuestion: string = "";
   user: any = null;
   isShowingGraph: boolean = false;
+  amountOfData: number = 0;
   checkboxChoices: CheckboxChoices = {
     myGender: true,
     myProvince: true,
@@ -27,7 +28,8 @@ export class PhoneComponent implements OnInit {
     myScolarity: true,
     myLanguage: true,
     myMoney: true,
-    myCivilState: true
+    myCivilState: true,
+    myVrac: true
   }
 
   constructor(private preprocessService: PreprocessService, 
@@ -66,12 +68,12 @@ export class PhoneComponent implements OnInit {
       this.getSubQuestionData();
     } else if (symbol.includes('n')) {
       this.isThemeQuestion = false;
-      let questionData: QuestionData[] = this.preprocessService.getNoToQuestionData(symbol.substring(0, symbol.indexOf('n')), this.user, this.checkboxChoices);
+      let questionData: [QuestionData[], number] = this.preprocessService.getNoToQuestionData(symbol.substring(0, symbol.indexOf('n')), this.user, this.checkboxChoices);
       let processedSymbol = this.preprocessService.getUserProcessedSymbolWithFormattedQuestion(this.selectedQuestion, this.user);
       this.createGraph(questionData, this.selectedQuestion, processedSymbol);
     } else {
       this.isThemeQuestion = false;
-      let questionData: QuestionData[] = this.preprocessService.getQuestionData(this.selectedQuestion, this.user, this.checkboxChoices);
+      let questionData: [QuestionData[], number] = this.preprocessService.getQuestionData(this.selectedQuestion, this.user, this.checkboxChoices);
       let processedSymbol = this.preprocessService.getUserProcessedSymbolWithFormattedQuestion(this.selectedQuestion, this.user);
       this.createGraph(questionData, this.selectedQuestion, processedSymbol);
     }
@@ -79,11 +81,11 @@ export class PhoneComponent implements OnInit {
 
   getSubQuestionData() {
     let subQuestionName: string = this.preprocessService.getSubQuestionRealName(this.selectedQuestion, this.selectedSubQuestion);
-    let questionData: QuestionData[] = this.preprocessService.getQuestionData(subQuestionName, this.user, this.checkboxChoices);
-    this.createGraph(questionData, this.selectedQuestion, this.preprocessService.getProcessedSymbolWithSubQuestionName(subQuestionName));
+    let questionData: [QuestionData[], number] = this.preprocessService.getQuestionData(subQuestionName, this.user, this.checkboxChoices);
+    this.createGraph(questionData, this.selectedQuestion + ' ' + this.selectedSubQuestion, this.preprocessService.getProcessedSymbolWithSubQuestionName(subQuestionName));
   }
 
-  createGraph(questionData: QuestionData[], questionName: string, symbol: string){
+  createGraph(questionData: [QuestionData[], number], questionName: string, symbol: string){
     this.isShowingGraph = true;
     this.vizService.deleteGraph();
     const margin: Margin = {
@@ -114,11 +116,12 @@ export class PhoneComponent implements OnInit {
     const choice = this.preprocessService.getChoiceFromData(symbol, this.user[symbol])
 
     const xScale = this.scalesService.setXScale(graphSize.width);
-    const yScale = this.scalesService.setYScale(graphSize.height, questionData);
+    const yScale = this.scalesService.setYScale(graphSize.height, questionData[0]);
     this.vizService.drawXAxis(xScale, graphSize.height);
     this.vizService.drawYAxis(yScale);
     this.vizService.drawLegend(g, graphSize.width);
-    this.vizService.drawBars(g, questionData, xScale, yScale, choice);
+    this.vizService.drawBars(g, questionData[0], xScale, yScale, choice);
+    this.amountOfData = questionData[1];
   }
 
 }

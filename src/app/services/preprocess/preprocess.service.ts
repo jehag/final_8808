@@ -70,7 +70,7 @@ export class PreprocessService {
         j++;
 
         if(this.excelQuestions[j]){
-          while(this.excelQuestions[j]["__EMPTY"] || this.excelQuestions[j]["__EMPTY_1"]){
+          while((this.excelQuestions[j]["__EMPTY"] || this.excelQuestions[j]["__EMPTY_1"]) && this.excelQuestions[j]["__EMPTY"] != 'Système'){
             excelQuestion.choices.set(parseInt(this.excelQuestions[j]["__EMPTY"]), this.excelQuestions[j]["__EMPTY_1"]);
             j++;
           }
@@ -201,9 +201,9 @@ export class PreprocessService {
     return data;
   }
 
-  getQuestionData(questionName:string, user: any, checkboxChoices: CheckboxChoices) : QuestionData[] {
+  getQuestionData(questionName:string, user: any, checkboxChoices: CheckboxChoices) : [QuestionData[], number] {
     if(questionName == 'could not find subQuestion' || questionName == 'could not find question'){
-      return [];
+      return [[], 0];
     }
 
     let data:QuestionData[] = [];
@@ -213,7 +213,7 @@ export class PreprocessService {
     });
 
     if(!question){
-      return [];
+      return [[], 0];
     }
 
     question.choices.forEach((choice) => {
@@ -238,7 +238,7 @@ export class PreprocessService {
         }
       }
     }
-    return data;
+    return [data, sumOfValues];
   }
 
   getLabelData(question: ExcelQuestions, user: any, checkboxChoices: CheckboxChoices): Map<number,number> {
@@ -260,32 +260,42 @@ export class PreprocessService {
   } 
 
   checkForChecks(row: any, user: any, checkboxChoices: CheckboxChoices): boolean {
-    if(checkboxChoices.myAge && this.checkIfSameSituation(row, user, 'age')){
+    if(checkboxChoices.myAge && !this.checkIfSameSituation(row, user, 'age')){
       return false;
     }
-    if(checkboxChoices.myCivilState && this.checkIfSameSituation(row, user, 'ETAT')){
+    if(checkboxChoices.myCivilState && !this.checkIfSameSituation(row, user, 'ETAT')){
       return false;
     }
-    if(checkboxChoices.myGender && this.checkIfSameSituation(row, user, 'sexe')){
+    if(checkboxChoices.myGender && !this.checkIfSameSituation(row, user, 'sexe')){
       return false;
     }
-    if(checkboxChoices.myLanguage && this.checkIfSameSituation(row, user, 'LANGU')){
+    if(checkboxChoices.myLanguage && !this.checkIfSameSituation(row, user, 'LANGU')){
       return false;
     }
-    if(checkboxChoices.myMoney && this.checkIfSameSituation(row, user, 'REVEN')){
+    if(checkboxChoices.myMoney && !this.checkIfSameSituation(row, user, 'REVEN')){
       return false;
     }
-    if(checkboxChoices.myProvince && this.checkIfSameSituation(row, user, 'PROV')){
+    if(checkboxChoices.myProvince && !this.checkIfSameSituation(row, user, 'PROV')){
       return false;
     }
-    if(checkboxChoices.myScolarity && this.checkIfSameSituation(row, user, 'SCOL')){
+    if(checkboxChoices.myScolarity && !this.checkIfSameSituation(row, user, 'SCOL')){
       return false;
+    }
+    if(checkboxChoices.myScolarity && row['Q5r1'] && user['Q5r1'] && this.getVracBehavior(row) != this.getVracBehavior(user)){
+      return false
     }
     return true;
   }
 
-  checkIfSameSituation(row: any, user: any, situation:string){
+  checkIfSameSituation(row: any, user: any, situation:string) : boolean{
     return row[situation] == user[situation];
+  }
+
+  getVracBehavior(row: any) : boolean{
+    if(row['Q5r1'] == 1 || row['Q5r2'] == 2 || row['Q5r3'] == 3){
+      return true;
+    }
+    return false;
   }
 
   getFormattedSymbolWithQuestion(questionName: string): string{
@@ -314,7 +324,7 @@ export class PreprocessService {
     return themeQuestions;
   }
 
-  getNoToQuestionData(symbolStart: string, user: any, checkboxChoices: CheckboxChoices): QuestionData[] {
+  getNoToQuestionData(symbolStart: string, user: any, checkboxChoices: CheckboxChoices): [QuestionData[], number] {
     let questions: ExcelQuestions[] = [];
     this.processedExcelQuestions.forEach((question) => {
       if(this.isEnvironmentalQuestion(question.symbol) && question.symbol.includes(symbolStart)){
@@ -324,7 +334,7 @@ export class PreprocessService {
 
     let questionDataList:QuestionData[] = [];
     let sumOfValues = 0;
-
+    
     questions.forEach((question) => {
       questionDataList.push({
         "label": question.question.split(' - ')[0],
@@ -349,7 +359,7 @@ export class PreprocessService {
       questionDataList[i].value = (questionDataList[i].value / sumOfValues) * 100;
     }
 
-    return questionDataList;
+    return [questionDataList, sumOfValues];
   }
 
   getSubQuestionRealName(selectedQuestion:string, subQuestion: string): string {
