@@ -132,4 +132,5 @@ export class VizService {
     const g = d3.select('#bar-chart').selectAll('*').remove();
     g.remove();
   }
+  
 }
