@@ -86,7 +86,7 @@ export class PreprocessService {
   isEnvironmentalQuestion(symbol:string): boolean{
     for(let i = 2; i <= 18; i++){
       let correctLetters: string = 'Q' + i;
-      if(symbol.includes(correctLetters)){
+      if(correctLetters != 'Q12' && symbol.includes(correctLetters)){
         return true;
       }
     }
@@ -412,5 +412,13 @@ export class PreprocessService {
       return question.choices.get(value)!;
     }
     return 'Unknown Question';
+  }
+
+  getWallQuestions(): string[] {
+    let wallQuestions: string[] = [];
+    this.formattedQuestions.forEach((question) => {
+      if(question)
+    })
+    return wallQuestions;
   }
 }
