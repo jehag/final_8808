@@ -3,6 +3,8 @@ import * as d3 from 'd3';
 import { Margin } from 'src/app/interfaces/margin';
 import { legendColor } from 'd3-svg-legend';
 import { QuestionData } from 'src/app/interfaces/question-data';
+import { QuestionDataHelper } from 'src/app/interfaces/question-data-helper';
+import { GenderDataSetup } from 'src/app/interfaces/gender-data-setup';
 
 @Injectable({
   providedIn: 'root'
@@ -10,17 +12,16 @@ import { QuestionData } from 'src/app/interfaces/question-data';
 export class VizService {
 
   constructor() { }
-  generateG (margin: Margin) {
-    return d3.select('.graph')
+  generateG (margin: Margin, graphClass: string) {
+    return d3.select(graphClass)
       .select('svg')
       .append('g')
-      .attr('id', 'graph-g')
       .attr('transform',
         'translate(' + margin.left + ',' + margin.top + ')')
   }
 
-  setCanvasSize (width: number, height: number) {
-    d3.select('#bar-chart')
+  setCanvasSize (width: number, height: number, graphId: string) {
+    d3.select(graphId)
       .attr('width', width)
       .attr('height', height)
   }
@@ -98,10 +99,10 @@ export class VizService {
       .call(d3.axisLeft(yScale).tickSizeOuter(0).tickArguments([5, '.0r']) as any)
   }
 
-  drawLegend (g: any, width: number) {
+  drawLegend (g: any, width: number, domain: string[], range: string[]) {
     const colorScale = d3.scaleOrdinal()
-      .domain(['Votre réponse'])
-      .range(['orange']);
+      .domain(domain)
+      .range(range);
 
     g.append('g')
       .attr('class', 'legendOrdinal')
@@ -128,9 +129,50 @@ export class VizService {
       .attr("height", yScale.bandwidth());
   }
 
-  deleteGraph(){
-    const g = d3.select('#bar-chart').selectAll('*').remove();
+  deleteGraph(graphId: string){
+    const g = d3.select(graphId).selectAll('*').remove();
     g.remove();
   }
-  
+
+  drawGenderBars(g:any, data: any, xScale:any, yScale:any, colors: string[], groupLabels: string[]){
+    let currentGroup = 0;
+    var groups = g
+      .selectAll("g.bars")
+      .data(data)
+      .enter().append("g")
+      .attr("class", "bars")
+      .style("fill", function(d: any, i: any) { return colors[i]; })
+      .style("stroke", "#000");
+    
+    groups.selectAll("rect")
+      .data(function(d: any) { return d; })
+      .enter()
+      .append("rect")
+      .attr("x", function(d: any) { return xScale(Math.round(d[0])); })
+      .attr("y", function(d: any) { return yScale(d.data.label); })
+      .attr("height", yScale.bandwidth())
+      .attr("width", function(d: any) { return xScale(Math.round(d[1])) - xScale(Math.round(d[0]));})
+      .each(function(d: any, i: any, nodes: any) {
+        if(Math.round(d.data[groupLabels[currentGroup]]) >= 3){
+          d3.select(nodes[i].parentNode)
+          .append("text")
+          .text(function() {
+            return Math.round(d.data[groupLabels[currentGroup]]) + "%"
+          })
+          .attr("x", xScale(d[0]) + (xScale(d[1]) - xScale(d[0])) / 2)
+          .attr("y", yScale(d.data.label) + yScale.bandwidth() / 2)
+          .attr("text-anchor", "middle")
+          .attr("dy", ".35em")
+          .style("fill", "white");
+        }
+        if(i == data[0].length - 1){
+          currentGroup++;
+        }
+      });
+
+  }
+
+  stackData(data: any[], keys: string[]) {
+    return d3.stack().keys(keys)(data);
+  }
 }

@@ -24,6 +24,10 @@ export class ScalesService {
     return d3.scaleBand().domain(data.map(function(d) { return d.label; })).range([0, height]).padding(0.4);
   }
 
+  setWallYScale(height: number, data: string[]){
+    return d3.scaleBand().domain(data).range([0, height]).padding(0.4);
+  }
+
   setColorScale (data: QuestionData[], userChoice: string) {
     // const colorScale = d3.scaleOrdinal(d3.schemeSet1)
     const labels = Object.values(data.map(d => d.label));

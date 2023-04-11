@@ -4,6 +4,7 @@ import * as XLSX from 'xlsx';
 import { ExcelQuestions } from '../../interfaces/excel-questions';
 import { QuestionData } from '../../interfaces/question-data';
 import { CheckboxChoices } from '../../interfaces/checkbox-choices';
+import { QuestionDataHelper } from 'src/app/interfaces/question-data-helper';
 
 @Injectable({
   providedIn: 'root'
@@ -201,9 +202,13 @@ export class PreprocessService {
     return data;
   }
 
-  getQuestionData(questionName:string, user: any, checkboxChoices: CheckboxChoices) : [QuestionData[], number] {
+  getQuestionData(questionName:string, user: any, checkboxChoices: CheckboxChoices) : QuestionDataHelper {
+    let questionDataHelper:QuestionDataHelper = {
+      questionData: [],
+      sumOfValues: 0
+    };
     if(questionName == 'could not find subQuestion' || questionName == 'could not find question'){
-      return [[], 0];
+      return questionDataHelper;
     }
 
     let data:QuestionData[] = [];
@@ -213,7 +218,7 @@ export class PreprocessService {
     });
 
     if(!question){
-      return [[], 0];
+      return questionDataHelper;
     }
 
     question.choices.forEach((choice) => {
@@ -238,7 +243,9 @@ export class PreprocessService {
         }
       }
     }
-    return [data, sumOfValues];
+    questionDataHelper.questionData = data;
+    questionDataHelper.sumOfValues = sumOfValues;
+    return questionDataHelper;
   }
 
   getLabelData(question: ExcelQuestions, user: any, checkboxChoices: CheckboxChoices): Map<number,number> {
@@ -281,9 +288,6 @@ export class PreprocessService {
     if(checkboxChoices.myScolarity && !this.checkIfSameSituation(row, user, 'SCOL')){
       return false;
     }
-    if(checkboxChoices.myScolarity && row['Q5r1'] && user['Q5r1'] && this.getVracBehavior(row) != this.getVracBehavior(user)){
-      return false
-    }
     return true;
   }
 
@@ -324,7 +328,7 @@ export class PreprocessService {
     return themeQuestions;
   }
 
-  getNoToQuestionData(symbolStart: string, user: any, checkboxChoices: CheckboxChoices): [QuestionData[], number] {
+  getNoToQuestionData(symbolStart: string, user: any, checkboxChoices: CheckboxChoices): QuestionDataHelper {
     let questions: ExcelQuestions[] = [];
     this.processedExcelQuestions.forEach((question) => {
       if(this.isEnvironmentalQuestion(question.symbol) && question.symbol.includes(symbolStart)){
@@ -358,8 +362,13 @@ export class PreprocessService {
     for(let i = 0; i < questionDataList.length; i++){
       questionDataList[i].value = (questionDataList[i].value / sumOfValues) * 100;
     }
-
-    return [questionDataList, sumOfValues];
+    let questionDataHelper:QuestionDataHelper = {
+      questionData: [],
+      sumOfValues: 0
+    };
+    questionDataHelper.questionData = questionDataList;
+    questionDataHelper.sumOfValues = sumOfValues;
+    return questionDataHelper;
   }
 
   getSubQuestionRealName(selectedQuestion:string, subQuestion: string): string {
@@ -414,11 +423,26 @@ export class PreprocessService {
     return 'Unknown Question';
   }
 
-  getWallQuestions(): string[] {
-    let wallQuestions: string[] = [];
+  getWallQuestions(): ExcelQuestions[] {
+    let wallQuestions: ExcelQuestions[] = [];
     this.formattedQuestions.forEach((question) => {
-      if(question)
+      if(!question.symbol.includes('r')){
+        wallQuestions.push(question);
+      } else {
+        let themeQuestions: string[] = this.getThemeQuestions(question.symbol);
+        for(let themequestion of themeQuestions){
+          let newQuestion: ExcelQuestions = {
+            question: question.question,
+            symbol: question.symbol,
+            savedSymbol: question.savedSymbol,
+            choices: question.choices
+          };
+          newQuestion.question += ' ' + themequestion;
+          wallQuestions.push(newQuestion);
+        }
+      }
     })
     return wallQuestions;
   }
+  
 }
