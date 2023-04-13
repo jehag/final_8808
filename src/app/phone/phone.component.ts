@@ -117,9 +117,10 @@ export class PhoneComponent implements OnInit {
 
     const xScale = this.scalesService.setXScale(graphSize.width);
     const yScale = this.scalesService.setYScale(graphSize.height, questionDataHelper.questionData);
+    const colorScale = this.scalesService.setColorScale(['Votre réponse'], ['orange']);
     this.vizService.drawXAxis(xScale, graphSize.height);
     this.vizService.drawYAxis(yScale);
-    this.vizService.drawLegend(g, graphSize.width, ['Votre réponse'], ['orange']);
+    this.vizService.drawLegend(g, graphSize.width, colorScale);
     this.vizService.drawBars(g, questionDataHelper.questionData, xScale, yScale, choice);
     this.amountOfData = questionDataHelper.sumOfValues;
   }

@@ -66,7 +66,7 @@ export class PreprocessService {
             excelQuestion.question += " : "
           }
         }
-        excelQuestion.question = excelQuestion.question.substring(1);
+        excelQuestion.question = excelQuestion.question.trim();
 
         j++;
 
@@ -295,13 +295,6 @@ export class PreprocessService {
     return row[situation] == user[situation];
   }
 
-  getVracBehavior(row: any) : boolean{
-    if(row['Q5r1'] == 1 || row['Q5r2'] == 2 || row['Q5r3'] == 3){
-      return true;
-    }
-    return false;
-  }
-
   getFormattedSymbolWithQuestion(questionName: string): string{
     const question = this.formattedQuestions.find((question) => {
       return question.question == questionName
@@ -348,11 +341,13 @@ export class PreprocessService {
       
     questions.forEach((question) => {
       let labelData: Map<number, number> = this.getLabelData(question, user, checkboxChoices);
-      for(let data of labelData.values()){
-        sumOfValues += data;
-        for(let i = 0; i < questionDataList.length; i++){
-          if(questionDataList[i].label == question.question.split(' - ')[0]){
-            questionDataList[i].value = data;
+      if(labelData.size >= 1){
+        for(let data of labelData.values()){
+          sumOfValues += data;
+          for(let i = 0; i < questionDataList.length; i++){
+            if(questionDataList[i].label == question.question.split(' - ')[0]){
+              questionDataList[i].value = data;
+            }
           }
         }
       }
@@ -360,7 +355,9 @@ export class PreprocessService {
 
 
     for(let i = 0; i < questionDataList.length; i++){
-      questionDataList[i].value = (questionDataList[i].value / sumOfValues) * 100;
+      if(sumOfValues != 0){
+        questionDataList[i].value = (questionDataList[i].value / sumOfValues) * 100;
+      }
     }
     let questionDataHelper:QuestionDataHelper = {
       questionData: [],
@@ -437,12 +434,53 @@ export class PreprocessService {
             savedSymbol: question.savedSymbol,
             choices: question.choices
           };
-          newQuestion.question += ' ' + themequestion;
+          newQuestion.question = themequestion + ' - ' + newQuestion.question;
           wallQuestions.push(newQuestion);
         }
       }
     })
     return wallQuestions;
+  }
+
+  getMostPopularAnswer(questionData: QuestionData[]): string {
+    const maxData = questionData.reduce((max: QuestionData, current: QuestionData) =>
+      max.value > current.value ? max : current
+    );
+    return maxData.label;
+  }
+
+  getQuestionChoices(question: ExcelQuestions): string[] {
+    let choices: string[] = [];
+    if(question.symbol.includes('n')){
+      let symbolStart = question.symbol.substring(0,question.symbol.indexOf('n'));
+      this.processedExcelQuestions.forEach((processedQuestion) => {
+        if(this.isEnvironmentalQuestion(processedQuestion.symbol) && processedQuestion.symbol.includes(symbolStart)){
+          choices.push(processedQuestion.question.split(' - ')[0]);
+        }
+      })
+    } else if(question.symbol.includes('r')){
+      let questionName: string = '';
+      let questionStart: string = question.question.split(' - ')[0].trim();
+      for(let choice of question.choices.values()){
+        if(choice.includes(questionStart)){
+          questionName = choice;
+        }
+      }
+      
+      const subQuestion = this.processedExcelQuestions.find((processedQuestion) => {
+        return processedQuestion.question == questionName;
+      })
+      
+      for(let choice of subQuestion!.choices.values()){
+        choices.push(choice);
+      }
+
+    } else {
+      for(let choice of question.choices.values()){
+        choices.push(choice);
+      }
+    }
+    return choices;
   }
   
 }

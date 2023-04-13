@@ -9,11 +9,28 @@ import { Margin } from '../interfaces/margin';
 import { QuestionDataHelper } from '../interfaces/question-data-helper';
 import { GenderDataSetup } from '../interfaces/gender-data-setup';
 import { AgeDataSetup } from '../interfaces/age-data-setup';
+import * as d3 from 'd3';
+import { MapDataSetup } from '../interfaces/map-data-setup';
 
 enum GraphType {
   Gender = 0,
   Age = 1,
   Map = 2
+}
+enum Province {
+  BritishColumbia = 0,
+  Alberta = 1,
+  Saskatchewan = 2,
+  Manitoba = 3,
+  Ontario = 4,
+  Quebec = 5,
+  NewBrunswick = 6,
+  NovaScotia = 7,
+  PrinceEdward = 8,
+  NewFoundLand = 9,
+  NorthwestTerritories = 10,
+  Yukon = 11,
+  Nunavut = 12,
 }
 @Component({
   selector: 'app-wall',
@@ -22,9 +39,10 @@ enum GraphType {
 })
 export class WallComponent implements OnInit {
 
-  graphType: GraphType = GraphType.Age;
+  graphType: GraphType = GraphType.Gender;
   currentQuestion: number = 0;
   questionsList: ExcelQuestions[] = [];
+  mapData: any = [];
   checkBoxChoices: CheckboxChoices = {
     myGender: false,
     myProvince: false,
@@ -34,39 +52,70 @@ export class WallComponent implements OnInit {
     myMoney: false,
     myCivilState: false,
   }
+
   margin: Margin = {
     top: 75,
     right: 200,
     bottom: 100,
     left: 150
   }
+  
   svgSize = {
     width: 1000,
     height: 600
+  }
+
+  graphSize = {
+    width: this.svgSize.width - this.margin.right - this.margin.left,
+    height: this.svgSize.height - this.margin.bottom - this.margin.top
   }
 
   constructor(private preprocessService: PreprocessService, 
     private vizService: VizService,
     private scalesService: ScalesService) { }
 
-  ngOnInit(): void {
+  async ngOnInit() {
+    this.mapData = await this.getCanadaData();
     this.questionsList = this.preprocessService.getWallQuestions();
     this.createGraph();
   }
 
-  changeGraph(){
+  async getCanadaData() {
+    return d3.json('assets/data/canada.json').then(function (data) {
+      return data;
+    })
+  }
+
+  nextGraph(){
     this.vizService.deleteGraph('#wall-chart');
     if(this.graphType == GraphType.Gender){
       this.graphType = GraphType.Age;
     } else if (this.graphType == GraphType.Age) {
       this.graphType = GraphType.Map;
     } else {
-      if(this.currentQuestion == 16){
+      if(this.currentQuestion == 49){
         this.currentQuestion = 0;
       } else {
         this.currentQuestion++;
       }
       this.graphType = GraphType.Gender;
+    }
+    this.createGraph();
+  }
+
+  previousGraph(){
+    this.vizService.deleteGraph('#wall-chart');
+    if(this.graphType == GraphType.Gender){
+      this.graphType = GraphType.Map;
+      if(this.currentQuestion == 0){
+        this.currentQuestion = 49;
+      } else {
+        this.currentQuestion--;
+      }
+    } else if (this.graphType == GraphType.Age) {
+      this.graphType = GraphType.Gender;
+    } else {
+      this.graphType = GraphType.Age;
     }
     this.createGraph();
   }
@@ -77,7 +126,7 @@ export class WallComponent implements OnInit {
     } else if (this.graphType == GraphType.Age) {
       this.createAgeGraph();
     } else {
-      //this.createMapGraph();
+      this.createMapGraph();
     }
   }
 
@@ -85,10 +134,7 @@ export class WallComponent implements OnInit {
     const genderData: GenderDataSetup[] = this.getGenderData();
     const groups: string[] = ['men', 'women'];
     const dataset = this.vizService.stackData(genderData, groups);
-    let labels: string[] = [];
-    for(let choice of dataset[0]){
-      labels.push(choice.data.label as any);
-    }
+    const labels = this.preprocessService.getQuestionChoices(this.questionsList[this.currentQuestion]);
     const colors = ['#92D050', '#9DC3E6'];
     const legendItems = ['Hommes', 'Femmes'];
 
@@ -116,11 +162,7 @@ export class WallComponent implements OnInit {
     const ageData: AgeDataSetup[] = this.getAgeData();
     const groups: string[] = ['firstBracket', 'secondBracket', 'thirdBracket', 'fourthBracket', 'fifthBracket', 'sixthBracket'];
     const dataset = this.vizService.stackData(ageData, groups);
-    console.log(dataset)
-    let labels: string[] = [];
-    for(let choice of dataset[0]){
-      labels.push(choice.data.label as any);
-    }
+    const labels = this.preprocessService.getQuestionChoices(this.questionsList[this.currentQuestion]);
     const colors = ['#39aac6', '#E7E6E6', '#FFC000', '#92D050', '#00B0F0', '#ff9999'];
     const legendItems = ["18 et moins", "18-24", "25-39", "40-54", "55-64", "65 et plus"];
 
@@ -147,6 +189,20 @@ export class WallComponent implements OnInit {
     return data;
   }
 
+  createMapGraph(){
+    const provinceAnswers: MapDataSetup[] = this.getMapData();
+    const choices = this.preprocessService.getQuestionChoices(this.questionsList[this.currentQuestion]);
+    const colorscale = this.scalesService.setMapColorScale(choices);
+
+    this.vizService.setCanvasSize(this.svgSize.width, this.svgSize.height, '#wall-chart');
+    var projection = this.vizService.getProjection(this.mapData, this.svgSize.width, this.svgSize.height);
+    var path = this.vizService.getPath(projection);
+    const g = this.vizService.generateG(this.margin, '.wall-graph');
+    this.vizService.mapBackground(g, this.mapData, path, colorscale, provinceAnswers);
+    this.vizService.placeTitle(g, this.questionsList[this.currentQuestion].question, this.graphSize.width);
+    this.vizService.drawMapLegend(g, this.graphSize.width, colorscale);
+  }
+
   getQuestionData(symbol: string, maxNumber: number) : QuestionDataHelper[] {
     let user: any = {
       [symbol]: 0
@@ -156,15 +212,14 @@ export class WallComponent implements OnInit {
       user[symbol] = i;
       if(this.questionsList[this.currentQuestion].symbol.includes('n')){
         let symbolStart = this.questionsList[this.currentQuestion].symbol.substring(0,this.questionsList[this.currentQuestion].symbol.indexOf('n'));
-        questionDataList.push(this.preprocessService.getNoToQuestionData(symbolStart, user, this.checkBoxChoices))
+        questionDataList.push(this.preprocessService.getNoToQuestionData(symbolStart, user, this.checkBoxChoices));
       } else {
         let questionName: string = '';
         
         if(this.questionsList[this.currentQuestion].symbol.includes('r')){
-          let questionSplit: string[] = this.questionsList[this.currentQuestion].question.split(' : ');
-          let questionEnding: string = questionSplit[questionSplit.length - 1].trim();
+          let questionStart: string = this.questionsList[this.currentQuestion].question.split(' - ')[0].trim();
           for(let choice of this.questionsList[this.currentQuestion].choices.values()){
-            if(choice.includes(questionEnding)){
+            if(choice.includes(questionStart)){
               questionName = choice;
             }
           }
@@ -178,25 +233,53 @@ export class WallComponent implements OnInit {
   }
 
   buildGraph(labels: string[], colors: string[], legendItems: string[], dataset: any, groupLabels: string[]){
-    let graphSize = {
-      width: this.svgSize.width - this.margin.right - this.margin.left,
-      height: this.svgSize.height - this.margin.bottom - this.margin.top
-    }
-
     this.vizService.setCanvasSize(this.svgSize.width, this.svgSize.height, '#wall-chart');
 
     const g = this.vizService.generateG(this.margin, '.wall-graph');
     this.vizService.appendAxes(g);
     this.vizService.appendGraphLabels(g);
-    this.vizService.placeTitle(g, this.questionsList[this.currentQuestion].question, graphSize.width);
-    this.vizService.positionLabels(g, graphSize.width, graphSize.height);
+    this.vizService.placeTitle(g, this.questionsList[this.currentQuestion].question, this.graphSize.width);
+    this.vizService.positionLabels(g, this.graphSize.width, this.graphSize.height);
 
-    const xScale = this.scalesService.setXScale(graphSize.width);
-    const yScale = this.scalesService.setWallYScale(graphSize.height, labels);
-    this.vizService.drawXAxis(xScale, graphSize.height);
+    const xScale = this.scalesService.setXScale(this.graphSize.width);
+    const yScale = this.scalesService.setWallYScale(this.graphSize.height, labels);
+    const colorScale = this.scalesService.setColorScale(legendItems, colors)
+    this.vizService.drawXAxis(xScale, this.graphSize.height);
     this.vizService.drawYAxis(yScale);
-    this.vizService.drawLegend(g, graphSize.width, legendItems, colors);
-    this.vizService.drawGenderBars(g, dataset, xScale, yScale, colors, groupLabels);
+    this.vizService.drawLegend(g, this.graphSize.width, colorScale);
+    this.vizService.drawWallBars(g, dataset, xScale, yScale, colors, groupLabels);
+  }
+
+  getMapData(): MapDataSetup[]{
+    this.checkBoxChoices.myProvince = true;
+    const questionDataList: QuestionDataHelper[] = this.getQuestionData('PROV', 13);
+    this.checkBoxChoices.myProvince = false;
+
+    let mostPopularAnswers: string[] = [];
+    for(let questionDataHelper of questionDataList){
+      mostPopularAnswers.push(this.preprocessService.getMostPopularAnswer(questionDataHelper.questionData));
+    }
+
+    let labels: string[] = [];
+    for(let province of this.mapData.features){
+      labels.push(province.properties.name);
+    }
+
+    let mapData:MapDataSetup[] = [];
+    mapData.push({province: labels[0], answer: mostPopularAnswers[Province.Quebec]});
+    mapData.push({province: labels[1], answer: mostPopularAnswers[Province.NewFoundLand]});
+    mapData.push({province: labels[2], answer: mostPopularAnswers[Province.BritishColumbia]});
+    mapData.push({province: labels[3], answer: mostPopularAnswers[Province.Nunavut]});
+    mapData.push({province: labels[4], answer: mostPopularAnswers[Province.NorthwestTerritories]});
+    mapData.push({province: labels[5], answer: mostPopularAnswers[Province.NewBrunswick]});
+    mapData.push({province: labels[6], answer: mostPopularAnswers[Province.NovaScotia]});
+    mapData.push({province: labels[7], answer: mostPopularAnswers[Province.Saskatchewan]});
+    mapData.push({province: labels[8], answer: mostPopularAnswers[Province.Alberta]});
+    mapData.push({province: labels[9], answer: mostPopularAnswers[Province.PrinceEdward]});
+    mapData.push({province: labels[10], answer: mostPopularAnswers[Province.Yukon]});
+    mapData.push({province: labels[11], answer: mostPopularAnswers[Province.Manitoba]});
+    mapData.push({province: labels[12], answer: mostPopularAnswers[Province.Ontario]});
+    return mapData;
   }
 
 

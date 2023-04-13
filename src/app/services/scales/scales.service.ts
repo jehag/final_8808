@@ -28,10 +28,25 @@ export class ScalesService {
     return d3.scaleBand().domain(data).range([0, height]).padding(0.4);
   }
 
-  setColorScale (data: QuestionData[], userChoice: string) {
-    // const colorScale = d3.scaleOrdinal(d3.schemeSet1)
-    const labels = Object.values(data.map(d => d.label));
-    const colorScale = d3.scaleOrdinal(["Moi", "Autres"], ['orange, green'])
-    return colorScale;
+  setColorScale (domain: string[], range: string[]) {
+    return d3.scaleOrdinal(domain, range);
+  }
+
+  setMapColorScale(choices: string[]){
+    // const increment:number = Math.floor(256/(choices.length + 1));
+    // let opacities: number[] = [];
+    // for(let i = 0; i < choices.length; i++){
+    //   opacities.push((i+1)*increment);
+    // }
+    // const color: string = '#0000ff';
+    // let colors: string[] = [];
+    // for(let i = 0; i < choices.length; i++){
+    //   let hex = opacities[i].toString(16)
+    //   if(hex.length == 1){
+    //     hex = '0' + hex;
+    //   }
+    //   colors.push(color + hex);
+    // }
+    return d3.scaleOrdinal(choices, d3.schemeCategory10)
   }
 }

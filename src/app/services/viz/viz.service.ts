@@ -5,6 +5,7 @@ import { legendColor } from 'd3-svg-legend';
 import { QuestionData } from 'src/app/interfaces/question-data';
 import { QuestionDataHelper } from 'src/app/interfaces/question-data-helper';
 import { GenderDataSetup } from 'src/app/interfaces/gender-data-setup';
+import { MapDataSetup } from 'src/app/interfaces/map-data-setup';
 
 @Injectable({
   providedIn: 'root'
@@ -99,11 +100,7 @@ export class VizService {
       .call(d3.axisLeft(yScale).tickSizeOuter(0).tickArguments([5, '.0r']) as any)
   }
 
-  drawLegend (g: any, width: number, domain: string[], range: string[]) {
-    const colorScale = d3.scaleOrdinal()
-      .domain(domain)
-      .range(range);
-
+  drawLegend (g: any, width: number, colorScale: any) {
     g.append('g')
       .attr('class', 'legendOrdinal')
       .attr('transform', 'translate(' + (width + 20) + ', 200)')
@@ -134,7 +131,7 @@ export class VizService {
     g.remove();
   }
 
-  drawGenderBars(g:any, data: any, xScale:any, yScale:any, colors: string[], groupLabels: string[]){
+  drawWallBars(g:any, data: any, xScale:any, yScale:any, colors: string[], groupLabels: string[]){
     let currentGroup = 0;
     var groups = g
       .selectAll("g.bars")
@@ -174,5 +171,47 @@ export class VizService {
 
   stackData(data: any[], keys: string[]) {
     return d3.stack().keys(keys)(data);
+  }
+
+mapBackground (g:any, data: any, path: any, colorScale: any, provinceAnswers: MapDataSetup[]) {
+    g.append('g')
+    .selectAll('path')
+    .data(data.features)
+    .enter()
+    .append('path')
+    .attr('d', path)
+    .attr('fill', function(d: any){ 
+      const province = provinceAnswers.find((province) => {
+        return province.province == d.properties.name;
+      })
+      return colorScale(province!.answer)})
+    .style('stroke', 'black')
+  }
+
+  getProjection (data: any, width: number, height:number) {
+    return d3.geoAzimuthalEquidistant()
+      .fitSize([width, height], data)
+      .rotate([90, 0])
+      .translate([(width/2) - 150, height + height/2 + 100])
+  }
+  
+  getPath (projection: d3.GeoProjection) {
+    return d3.geoPath()
+      .projection(projection)
+  }
+
+  drawMapLegend (g:any, width: number, colorScale: any) {
+    g.append('g')
+      .attr('class', 'legendOrdinal')
+      .attr('transform', 'translate(' + (width - 100) + ', 100)')
+  
+    var legendOrdinal = legendColor()
+      .shape('path', d3.symbol().type(d3.symbolCircle).size(300)()!)
+      .shapePadding(2)
+      .scale(colorScale);
+    
+  
+    g.selectAll('.legendOrdinal')
+      .call(legendOrdinal)
   }
 }
