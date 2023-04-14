@@ -5,5 +5,4 @@ export interface AgeDataSetup {
     thirdBracket: number,
     fourthBracket: number,
     fifthBracket: number,
-    sixthBracket: number
 }

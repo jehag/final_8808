@@ -33,20 +33,6 @@ export class ScalesService {
   }
 
   setMapColorScale(choices: string[]){
-    // const increment:number = Math.floor(256/(choices.length + 1));
-    // let opacities: number[] = [];
-    // for(let i = 0; i < choices.length; i++){
-    //   opacities.push((i+1)*increment);
-    // }
-    // const color: string = '#0000ff';
-    // let colors: string[] = [];
-    // for(let i = 0; i < choices.length; i++){
-    //   let hex = opacities[i].toString(16)
-    //   if(hex.length == 1){
-    //     hex = '0' + hex;
-    //   }
-    //   colors.push(color + hex);
-    // }
-    return d3.scaleOrdinal(choices, d3.schemeCategory10)
+    return d3.scaleOrdinal().domain(choices).range(["#FF4136", "#FF851B", "#FFDC00", "#2ECC40", "#0074D9", "#B10DC9", "#FF007F", "#A0522D", "#AAAAAA", "#39CCCC", "#FF6EB4", "#8E44AD", "#85144b", "#3D9970", "#001f3f"].map((color, i) => i == choices.length - 1 ? 'white' : color));
   }
 }

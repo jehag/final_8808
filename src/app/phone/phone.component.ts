@@ -57,6 +57,9 @@ export class PhoneComponent implements OnInit {
   findUserData(man: boolean) {
     this.characterChosen = true;
     this.user = this.preprocessService.getUserData(man);
+    if(this.isShowingGraph){
+      this.getQuestionData();
+    }
   }
 
   getQuestionData(){

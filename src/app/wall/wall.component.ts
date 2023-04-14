@@ -160,18 +160,18 @@ export class WallComponent implements OnInit {
 
   createAgeGraph(){
     const ageData: AgeDataSetup[] = this.getAgeData();
-    const groups: string[] = ['firstBracket', 'secondBracket', 'thirdBracket', 'fourthBracket', 'fifthBracket', 'sixthBracket'];
+    const groups: string[] = ['firstBracket', 'secondBracket', 'thirdBracket', 'fourthBracket', 'fifthBracket'];
     const dataset = this.vizService.stackData(ageData, groups);
     const labels = this.preprocessService.getQuestionChoices(this.questionsList[this.currentQuestion]);
     const colors = ['#39aac6', '#E7E6E6', '#FFC000', '#92D050', '#00B0F0', '#ff9999'];
-    const legendItems = ["18 et moins", "18-24", "25-39", "40-54", "55-64", "65 et plus"];
+    const legendItems = ["18-24", "25-39", "40-54", "55-64", "65 et plus"];
 
     this.buildGraph(labels, colors, legendItems, dataset, groups)
   }
 
   getAgeData(): AgeDataSetup[] {
     this.checkBoxChoices.myAge = true;
-    let questionDataList: QuestionDataHelper[] = this.getQuestionData('age', 6);
+    let questionDataList: QuestionDataHelper[] = this.getQuestionData('age', 5);
     this.checkBoxChoices.myAge = false;
     let data: AgeDataSetup[] = [];
     for(let i = 0; i < questionDataList[0].questionData.length; i++){
@@ -183,7 +183,6 @@ export class WallComponent implements OnInit {
         thirdBracket: (questionDataList[2].questionData[i].value * questionDataList[2].sumOfValues) / totalSum,
         fourthBracket: (questionDataList[3].questionData[i].value * questionDataList[3].sumOfValues) / totalSum,
         fifthBracket: (questionDataList[4].questionData[i].value * questionDataList[4].sumOfValues) / totalSum,
-        sixthBracket: (questionDataList[5].questionData[i].value * questionDataList[5].sumOfValues) / totalSum
       });
     }
     return data;
@@ -191,13 +190,14 @@ export class WallComponent implements OnInit {
 
   createMapGraph(){
     const provinceAnswers: MapDataSetup[] = this.getMapData();
-    const choices = this.preprocessService.getQuestionChoices(this.questionsList[this.currentQuestion]);
-    const colorscale = this.scalesService.setMapColorScale(choices);
-
+    let choices: string[] = this.preprocessService.getQuestionChoices(this.questionsList[this.currentQuestion]);
+    choices.push('Aucune réponse');
+    
     this.vizService.setCanvasSize(this.svgSize.width, this.svgSize.height, '#wall-chart');
     var projection = this.vizService.getProjection(this.mapData, this.svgSize.width, this.svgSize.height);
     var path = this.vizService.getPath(projection);
     const g = this.vizService.generateG(this.margin, '.wall-graph');
+    const colorscale = this.scalesService.setMapColorScale(choices);
     this.vizService.mapBackground(g, this.mapData, path, colorscale, provinceAnswers);
     this.vizService.placeTitle(g, this.questionsList[this.currentQuestion].question, this.graphSize.width);
     this.vizService.drawMapLegend(g, this.graphSize.width, colorscale);

@@ -5,6 +5,32 @@ import { ExcelQuestions } from '../../interfaces/excel-questions';
 import { QuestionData } from '../../interfaces/question-data';
 import { CheckboxChoices } from '../../interfaces/checkbox-choices';
 import { QuestionDataHelper } from 'src/app/interfaces/question-data-helper';
+type LabelMap = {
+  [key:string]: string;
+}
+const Q10labels: LabelMap = {
+  'Q10Ar1': "Manque de disponibilité",
+  'Q10Ar2': "Trop d'effort",
+  'Q10Ar3': "Trop d'effort",
+  'Q10Ar4': "Trop d'effort",
+  'Q10Ar5': 'Ne connais pas assez',
+  'Q10Ar6': 'Ne connais pas assez',
+  'Q10Ar7': "Trop d'effort",
+  'Q10Ar8': "Insatisfait de l'offre",
+  'Q10Ar9': "Insatisfait de l'offre",
+  'Q10Ar10': "Par souci d'hygiène",
+  'Q10Ar11': "Par souci d'hygiène",
+  'Q10Ar12': "Par souci d'hygiène",
+  'Q10Ar13': "Par souci d'hygiène",
+  'Q10Ar14': 'Trop coûteux',
+  'Q10Ar15': "Manque d'information sur les produits",
+  'Q10Ar16': "Trop d'effort",
+  'Q10Ar17': "Insatisfait de l'offre",
+  'Q10Ar18': "Appréciation des emballages",
+  'Q10Ar19': 'Trop coûteux',
+  'Q10Ar20': "Pas besoin de grande quantité",
+  'Q10Ar96': 'Autre'
+};
 
 @Injectable({
   providedIn: 'root'
@@ -29,6 +55,7 @@ export class PreprocessService {
         const worksheet: XLSX.WorkSheet = workbook.Sheets[sheetName];
         const excelData: any[] = XLSX.utils.sheet_to_json(worksheet, {raw: true});
         this.excelData = excelData;
+
       });
   }
 
@@ -43,6 +70,7 @@ export class PreprocessService {
         this.excelQuestions = excelData;
         this.processQuestions();
         this.formatQuestions();
+        console.log(this.processedExcelQuestions)
         console.log(this.formattedQuestions);
       });
   }
@@ -67,6 +95,10 @@ export class PreprocessService {
           }
         }
         excelQuestion.question = excelQuestion.question.trim();
+        const length = excelQuestion.question.length;
+        if(excelQuestion.question[length - 1] == ':'){
+          excelQuestion.question = excelQuestion.question.substring(0, length - 2);
+        }
 
         j++;
 
@@ -76,7 +108,9 @@ export class PreprocessService {
             j++;
           }
         }
+        
 
+        excelQuestion = this.fixSpecificQuestions(excelQuestion);
         this.processedExcelQuestions.push(excelQuestion);
 
         i = j-1;
@@ -331,29 +365,36 @@ export class PreprocessService {
 
     let questionDataList:QuestionData[] = [];
     let sumOfValues = 0;
-    
-    questions.forEach((question) => {
-      questionDataList.push({
-        "label": question.question.split(' - ')[0],
-        "value": 0
+    if(symbolStart == 'Q10A'){
+      questionDataList = this.initializeQ10QuestionData();
+    } else {
+      questions.forEach((question) => {
+        questionDataList.push({
+          "label": question.question.split(' - ')[0],
+          "value": 0
+        })
       })
-    })
-      
+    }
     questions.forEach((question) => {
       let labelData: Map<number, number> = this.getLabelData(question, user, checkboxChoices);
       if(labelData.size >= 1){
         for(let data of labelData.values()){
           sumOfValues += data;
-          for(let i = 0; i < questionDataList.length; i++){
-            if(questionDataList[i].label == question.question.split(' - ')[0]){
-              questionDataList[i].value = data;
+          if(symbolStart == 'Q10A'){
+            questionDataList[this.findQ10index(questionDataList, question.symbol)].value += data;
+          } else {
+            for(let i = 0; i < questionDataList.length; i++){
+              if(questionDataList[i].label == question.question.split(' - ')[0]){
+                questionDataList[i].value = data;
+              }
             }
           }
         }
       }
     })
 
-
+    
+    
     for(let i = 0; i < questionDataList.length; i++){
       if(sumOfValues != 0){
         questionDataList[i].value = (questionDataList[i].value / sumOfValues) * 100;
@@ -366,6 +407,29 @@ export class PreprocessService {
     questionDataHelper.questionData = questionDataList;
     questionDataHelper.sumOfValues = sumOfValues;
     return questionDataHelper;
+  }
+  
+  initializeQ10QuestionData(): QuestionData[] {
+    let questionData: QuestionData[] = [];
+    const Q10Choices = this.getQ10Choices();
+    for(let choice of Q10Choices){
+      questionData.push({
+        label: choice,
+        value: 0
+      })
+    }
+    return questionData;
+  }
+
+  findQ10index(questionDataList: QuestionData[], symbol: string): number {
+    const label = Q10labels[symbol];
+
+    for(let i = 0; i < questionDataList.length; i++){
+      if(questionDataList[i].label == label){
+        return i;
+      }
+    }
+    return -1;
   }
 
   getSubQuestionRealName(selectedQuestion:string, subQuestion: string): string {
@@ -415,6 +479,9 @@ export class PreprocessService {
       return question.symbol == symbol;
     })
     if(question){
+      if(symbol.includes('Q10A')){
+        return Q10labels[symbol];
+      }
       return question.choices.get(value)!;
     }
     return 'Unknown Question';
@@ -446,6 +513,9 @@ export class PreprocessService {
     const maxData = questionData.reduce((max: QuestionData, current: QuestionData) =>
       max.value > current.value ? max : current
     );
+    if(maxData.value == 0){
+      return 'Aucune réponse'
+    }
     return maxData.label;
   }
 
@@ -453,11 +523,15 @@ export class PreprocessService {
     let choices: string[] = [];
     if(question.symbol.includes('n')){
       let symbolStart = question.symbol.substring(0,question.symbol.indexOf('n'));
-      this.processedExcelQuestions.forEach((processedQuestion) => {
-        if(this.isEnvironmentalQuestion(processedQuestion.symbol) && processedQuestion.symbol.includes(symbolStart)){
-          choices.push(processedQuestion.question.split(' - ')[0]);
-        }
-      })
+      if(symbolStart == 'Q10A'){
+        choices = this.getQ10Choices();
+      } else {
+        this.processedExcelQuestions.forEach((processedQuestion) => {
+          if(this.isEnvironmentalQuestion(processedQuestion.symbol) && processedQuestion.symbol.includes(symbolStart)){
+            choices.push(processedQuestion.question.split(' - ')[0]);
+          }
+        })
+      }
     } else if(question.symbol.includes('r')){
       let questionName: string = '';
       let questionStart: string = question.question.split(' - ')[0].trim();
@@ -481,6 +555,34 @@ export class PreprocessService {
       }
     }
     return choices;
+  }
+
+  getQ10Choices(): string[] {
+    return ['Manque de disponibilité',"Trop d'effort",'Trop coûteux','Ne connais pas assez',
+    "Insatisfait de l'offre", "Par souci d'hygiène", "Manque d'information sur les produits",
+    "Appréciation des emballages", "Pas besoin de grande quantité", "Autre"];
+  }
+
+  fixChoices(choicesList:string[]): Map<number,string> {
+    let choices: Map<number,string> = new Map();
+    for(let i = 0; i < choicesList.length; i++){
+      choices.set(i, choicesList[i]);
+    }
+    return choices;
+  }
+
+  fixSpecificQuestions(oldQuestion:ExcelQuestions): ExcelQuestions {
+    let newQuestion: ExcelQuestions = {
+      symbol: oldQuestion.symbol,
+      question: oldQuestion.question,
+      choices: oldQuestion.choices
+    }
+    if(newQuestion.symbol.includes('Q13')){
+      newQuestion.choices = this.fixChoices(['Plus prioritaire','Moyennement prioritaire','Minimalement prioritaire','Moins prioritaire']);
+    } else if (newQuestion.symbol == 'age'){
+      newQuestion.choices.delete(1);
+    }
+    return newQuestion;
   }
   
 }

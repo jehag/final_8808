@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import * as d3 from 'd3';
 import { Margin } from 'src/app/interfaces/margin';
-import { legendColor } from 'd3-svg-legend';
+import { legendColor, legendSymbol } from 'd3-svg-legend';
 import { QuestionData } from 'src/app/interfaces/question-data';
 import { QuestionDataHelper } from 'src/app/interfaces/question-data-helper';
 import { GenderDataSetup } from 'src/app/interfaces/gender-data-setup';
@@ -33,6 +33,7 @@ export class VizService {
   
     g.append('g')
       .attr('class', 'y axis')
+      .style('width', 150)
   }
 
   appendGraphLabels (g: any) {
@@ -97,7 +98,61 @@ export class VizService {
 
   drawYAxis (yScale: any) {
     d3.select('.y.axis')
-      .call(d3.axisLeft(yScale).tickSizeOuter(0).tickArguments([5, '.0r']) as any)
+      .call(d3.axisLeft(yScale).tickSizeOuter(0).tickArguments([5, '.0r']) as any);
+    d3.select('.y.axis').selectAll('.tick').select('text').text(function(d: any) {
+      if(d.length <= 30){
+        return d;
+      } else {
+        const splitLabel = d.split(' ');
+        let labelStart: string = '';
+        let i: number = 0;
+        while(labelStart.length + splitLabel[i].length < 30){
+          labelStart += ' ' + splitLabel[i];
+          i++;
+        }
+        return labelStart;
+      }
+    }).each(function(d: any, i: any, nodes: any) {
+      if(d.length > 30){
+        let words: string[] = d.split(' ');
+        let labelStart: string = '';
+        let currentWordIndex: number = 0;
+        while(labelStart.length + words[currentWordIndex].length < 30){
+          labelStart += ' ' + words[currentWordIndex];
+          currentWordIndex++;
+        }
+        let j: number = 12;
+        while(currentWordIndex <= words.length - 1){
+          let line: string = words[currentWordIndex];
+          currentWordIndex++;
+          while(words[currentWordIndex] && line.length + words[currentWordIndex].length < 30 && currentWordIndex <= words.length - 1){
+            line = line + ' ' + words[currentWordIndex];
+            currentWordIndex++;
+          }
+          
+          if(words[currentWordIndex] && words[currentWordIndex].match(/[.,:!?]/)){
+            line += words[currentWordIndex];
+            currentWordIndex++;
+          }
+          d3.select(nodes[i].parentNode)
+          .append("text")
+          .text(function() {
+            return line;
+          })
+          .attr('fill', 'black')
+          .attr('y', j)
+          .attr('x', -9)
+          .attr('dy', '0.32em')
+          j = j + 12;
+        }
+        const lines: number = (j/12);
+        let currentLineHeight: number = -(((lines-1)/2)*12) - 12;
+        d3.select(nodes[i].parentNode).selectAll('text').attr('y', function() {
+          currentLineHeight += 12;
+          return currentLineHeight;
+        })
+      }
+    })
   }
 
   drawLegend (g: any, width: number, colorScale: any) {
@@ -203,15 +258,22 @@ mapBackground (g:any, data: any, path: any, colorScale: any, provinceAnswers: Ma
   drawMapLegend (g:any, width: number, colorScale: any) {
     g.append('g')
       .attr('class', 'legendOrdinal')
-      .attr('transform', 'translate(' + (width - 100) + ', 100)')
+      .attr('transform', 'translate(' + (width - 100) + ', 40)')
+      .append('text')
+      .text('Légende')
+      .attr('x', 20)
+      .attr('y', -20)
+      .attr('font-size', 20)
+      .attr('font-weight', 'bold')
   
     var legendOrdinal = legendColor()
       .shape('path', d3.symbol().type(d3.symbolCircle).size(300)()!)
       .shapePadding(2)
-      .scale(colorScale);
-    
-  
+      .scale(colorScale)
+
     g.selectAll('.legendOrdinal')
       .call(legendOrdinal)
+      .selectAll('.swatch')
+      .style('stroke', '#000');
   }
 }
