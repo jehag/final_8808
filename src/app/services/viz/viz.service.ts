@@ -276,4 +276,29 @@ mapBackground (g:any, data: any, path: any, colorScale: any, provinceAnswers: Ma
       .selectAll('.swatch')
       .style('stroke', '#000');
   }
+
+  drawWallLegend (g: any, width: number, colorScale: any, title: string, height: number) {
+    g.append('g')
+      .attr('class', 'legendOrdinal')
+      .attr('transform', 'translate(' + (width/2) + ', ' + (height - 120) +')')
+      .append('text')
+      .text(title)
+      .attr('x',  -40)
+      .attr('y', -20)
+      .attr('font-size', 14)
+      .attr('font-weight', 'bold')
+  
+    var legendOrdinal = (legendColor() as any)
+      .shape('path', d3.symbol().type(d3.symbolSquare).size(200)()!)
+      .shapePadding(2)
+      .scale(colorScale)
+      .orient('horizontal')
+      .shapePadding(15)
+      .title('allo')
+    
+    g.selectAll('.legendOrdinal')
+      .call(legendOrdinal)
+  }
+
+
 }

@@ -10,7 +10,7 @@ export class ScalesService {
   constructor() { }
 
   /**
- * Defines the log scale used to position the center of the circles in X.
+ * Defines the scale used to position the bars
  *
  * @param {number} width The width of the graph
  * @param {object} data The data to be used

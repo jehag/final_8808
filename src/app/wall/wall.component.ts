@@ -137,8 +137,9 @@ export class WallComponent implements OnInit {
     const labels = this.preprocessService.getQuestionChoices(this.questionsList[this.currentQuestion]);
     const colors = ['#92D050', '#9DC3E6'];
     const legendItems = ['Hommes', 'Femmes'];
+    const legendTitle = "Sexes :"
 
-    this.buildGraph(labels, colors, legendItems, dataset, groups);
+    this.buildGraph(labels, colors, legendItems, dataset, groups, legendTitle);
   }
 
   getGenderData(): GenderDataSetup[] {
@@ -165,8 +166,9 @@ export class WallComponent implements OnInit {
     const labels = this.preprocessService.getQuestionChoices(this.questionsList[this.currentQuestion]);
     const colors = ['#39aac6', '#E7E6E6', '#FFC000', '#92D050', '#00B0F0', '#ff9999'];
     const legendItems = ["18-24", "25-39", "40-54", "55-64", "65 et plus"];
+    const legendTitle = "Tranches d'âge :"
 
-    this.buildGraph(labels, colors, legendItems, dataset, groups)
+    this.buildGraph(labels, colors, legendItems, dataset, groups, legendTitle);
   }
 
   getAgeData(): AgeDataSetup[] {
@@ -232,7 +234,7 @@ export class WallComponent implements OnInit {
     return questionDataList;
   }
 
-  buildGraph(labels: string[], colors: string[], legendItems: string[], dataset: any, groupLabels: string[]){
+  buildGraph(labels: string[], colors: string[], legendItems: string[], dataset: any, groupLabels: string[], legendTitle: string){
     this.vizService.setCanvasSize(this.svgSize.width, this.svgSize.height, '#wall-chart');
 
     const g = this.vizService.generateG(this.margin, '.wall-graph');
@@ -246,7 +248,7 @@ export class WallComponent implements OnInit {
     const colorScale = this.scalesService.setColorScale(legendItems, colors)
     this.vizService.drawXAxis(xScale, this.graphSize.height);
     this.vizService.drawYAxis(yScale);
-    this.vizService.drawLegend(g, this.graphSize.width, colorScale);
+    this.vizService.drawWallLegend(g, this.graphSize.width, colorScale, legendTitle, this.svgSize.height);
     this.vizService.drawWallBars(g, dataset, xScale, yScale, colors, groupLabels);
   }
 
