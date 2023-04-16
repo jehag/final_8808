@@ -282,17 +282,23 @@ mapBackground (g:any, data: any, path: any, colorScale: any, provinceAnswers: Ma
       .text(function(d: any, i: any, nodes: any){
         const transform: string = d3.select(nodes[i].parentNode).attr('transform');
         const parsedY: string = transform.split(',')[1].substring(0, transform.split(',')[1].length - 2);
+        const maxLineLength: number = 35;
         if(parsedY != ' '){
           d3.select(nodes[i].parentNode)
           .attr('transform', 'translate( 0 , '+ (parseInt(parsedY) + offset)+')')
         }
-        if(d.length < 30){
+        if(d.length < maxLineLength){
           return d;
         }
         let words: string[] = d.split(' ');
+        for(let i = 0; i < words.length;i++){
+          if(words[i] == ''){
+            words.splice(i,1);
+          }
+        }
         let labelStart: string = '';
         let currentWordIndex: number = 0;
-        while(labelStart.length + words[currentWordIndex].length < 30){
+        while(labelStart.length + words[currentWordIndex].length < maxLineLength){
           labelStart += ' ' + words[currentWordIndex];
           currentWordIndex++;
         }
@@ -301,12 +307,12 @@ mapBackground (g:any, data: any, path: any, colorScale: any, provinceAnswers: Ma
         while(currentWordIndex <= words.length - 1){
           let line: string = words[currentWordIndex];
           currentWordIndex++;
-          while(words[currentWordIndex] && line.length + words[currentWordIndex].length < 30 && currentWordIndex <= words.length - 1){
+          while(words[currentWordIndex] && line.length + words[currentWordIndex].length < maxLineLength){
             line = line + ' ' + words[currentWordIndex];
             currentWordIndex++;
           }
           
-          if(words[currentWordIndex] && words[currentWordIndex].match(/[.,:!?]/)){
+          if(words[currentWordIndex] && (words[currentWordIndex].match(/[.,:!?]/))){
             line += words[currentWordIndex];
             currentWordIndex++;
           }

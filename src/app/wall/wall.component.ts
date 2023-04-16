@@ -40,7 +40,7 @@ enum Province {
 export class WallComponent implements OnInit {
 
   graphType: GraphType = GraphType.Gender;
-  currentQuestion: number = 0;
+  currentQuestion: number = 6;
   questionsList: ExcelQuestions[] = [];
   mapData: any = [];
   checkBoxChoices: CheckboxChoices = {
