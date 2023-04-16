@@ -40,7 +40,7 @@ enum Province {
 export class WallComponent implements OnInit {
 
   graphType: GraphType = GraphType.Gender;
-  currentQuestion: number = 6;
+  currentQuestion: number = 0;
   questionsList: ExcelQuestions[] = [];
   mapData: any = [];
   checkBoxChoices: CheckboxChoices = {
@@ -283,7 +283,4 @@ export class WallComponent implements OnInit {
     mapData.push({province: labels[12], answer: mostPopularAnswers[Province.Ontario]});
     return mapData;
   }
-
-
-
 }
