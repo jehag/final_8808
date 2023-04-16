@@ -8,7 +8,7 @@ import { QuestionDataHelper } from 'src/app/interfaces/question-data-helper';
 type LabelMap = {
   [key:string]: string;
 }
-const Q10labels: LabelMap = {
+const Q10Alabels: LabelMap = {
   'Q10Ar1': "Manque de disponibilité",
   'Q10Ar2': "Trop d'effort",
   'Q10Ar3': "Trop d'effort",
@@ -30,6 +30,20 @@ const Q10labels: LabelMap = {
   'Q10Ar19': 'Trop coûteux',
   'Q10Ar20': "Pas besoin de grande quantité",
   'Q10Ar96': 'Autre'
+};
+
+const Q10Blabels: LabelMap = {
+  'Q10Br1': "Je souhaite protéger l'environnement",
+  'Q10Br2': "Je souhaite réduire ma facture d'épicerie",
+  'Q10Br3': "Je souhaite acheter des produits qui sont bons pour la santé",
+  'Q10Br4': "Je souhaite protéger l'environnement",
+  'Q10Br5': "Cette option est disponible proche de chez moi",
+  'Q10Br6': "Je souhaite réduire ma facture d'épicerie",
+  'Q10Br7': "Je souhaite protéger l'environnement",
+  'Q10Br8': "Je souhaite protéger l'environnement",
+  'Q10Br9': "Je souhaite protéger l'environnement",
+  'Q10Br96': 'Autres (préciser)',
+  'Q10Br97': "Aucune raison en particulier / je ne suis pas intéressé(e)"
 };
 
 @Injectable({
@@ -365,8 +379,8 @@ export class PreprocessService {
 
     let questionDataList:QuestionData[] = [];
     let sumOfValues = 0;
-    if(symbolStart == 'Q10A'){
-      questionDataList = this.initializeQ10QuestionData();
+    if(symbolStart.includes('Q10')){
+      questionDataList = this.initializeQ10QuestionData(symbolStart);
     } else {
       questions.forEach((question) => {
         questionDataList.push({
@@ -380,7 +394,7 @@ export class PreprocessService {
       if(labelData.size >= 1){
         for(let data of labelData.values()){
           sumOfValues += data;
-          if(symbolStart == 'Q10A'){
+          if(symbolStart.includes('Q10')){
             questionDataList[this.findQ10index(questionDataList, question.symbol)].value += data;
           } else {
             for(let i = 0; i < questionDataList.length; i++){
@@ -409,10 +423,10 @@ export class PreprocessService {
     return questionDataHelper;
   }
   
-  initializeQ10QuestionData(): QuestionData[] {
+  initializeQ10QuestionData(symbolStart:string): QuestionData[] {
     let questionData: QuestionData[] = [];
-    const Q10Choices = this.getQ10Choices();
-    for(let choice of Q10Choices){
+    const choices: string[] = this.getQ10Choices(symbolStart);
+    for(let choice of choices){
       questionData.push({
         label: choice,
         value: 0
@@ -422,7 +436,12 @@ export class PreprocessService {
   }
 
   findQ10index(questionDataList: QuestionData[], symbol: string): number {
-    const label = Q10labels[symbol];
+    let label = '';
+    if(symbol.includes('Q10A')){
+      label = Q10Alabels[symbol]
+    } else {
+      label = Q10Blabels[symbol]
+    }
 
     for(let i = 0; i < questionDataList.length; i++){
       if(questionDataList[i].label == label){
@@ -480,7 +499,9 @@ export class PreprocessService {
     })
     if(question){
       if(symbol.includes('Q10A')){
-        return Q10labels[symbol];
+        return Q10Alabels[symbol];
+      } else if(symbol.includes('Q10B')){
+        return Q10Blabels[symbol];
       }
       return question.choices.get(value)!;
     }
@@ -523,8 +544,8 @@ export class PreprocessService {
     let choices: string[] = [];
     if(question.symbol.includes('n')){
       let symbolStart = question.symbol.substring(0,question.symbol.indexOf('n'));
-      if(symbolStart == 'Q10A'){
-        choices = this.getQ10Choices();
+      if(symbolStart.includes('Q10')){
+        choices = this.getQ10Choices(symbolStart);
       } else {
         this.processedExcelQuestions.forEach((processedQuestion) => {
           if(this.isEnvironmentalQuestion(processedQuestion.symbol) && processedQuestion.symbol.includes(symbolStart)){
@@ -557,10 +578,22 @@ export class PreprocessService {
     return choices;
   }
 
-  getQ10Choices(): string[] {
+  getQ10Choices(symbol:string): string[] {
+    if(symbol.includes('Q10A')){
+      return this.getQ10AChoices();
+    }
+    return this.getQ10BChoices();
+  }
+
+  getQ10AChoices(): string[] {
     return ['Manque de disponibilité',"Trop d'effort",'Trop coûteux','Ne connais pas assez',
     "Insatisfait de l'offre", "Par souci d'hygiène", "Manque d'information sur les produits",
     "Appréciation des emballages", "Pas besoin de grande quantité", "Autre"];
+  }
+
+  getQ10BChoices(): string[] {
+    return ["Je souhaite protéger l'environnement","Je souhaite réduire ma facture d'épicerie","Je souhaite acheter des produits qui sont bons pour la santé",
+    "Cette option est disponible proche de chez moi",'Autres (préciser)',"Aucune raison en particulier / je ne suis pas intéressé(e)"];
   }
 
   fixChoices(choicesList:string[]): Map<number,string> {

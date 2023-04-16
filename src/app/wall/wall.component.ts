@@ -248,7 +248,7 @@ export class WallComponent implements OnInit {
     const colorScale = this.scalesService.setColorScale(legendItems, colors)
     this.vizService.drawXAxis(xScale, this.graphSize.height);
     this.vizService.drawYAxis(yScale);
-    this.vizService.drawWallLegend(g, this.graphSize.width, colorScale, legendTitle, this.svgSize.height);
+    this.vizService.drawWallLegend(g, this.graphSize.width, colorScale, legendTitle);
     this.vizService.drawWallBars(g, dataset, xScale, yScale, colors, groupLabels);
   }
 

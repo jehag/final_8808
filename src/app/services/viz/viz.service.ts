@@ -247,7 +247,7 @@ mapBackground (g:any, data: any, path: any, colorScale: any, provinceAnswers: Ma
     return d3.geoAzimuthalEquidistant()
       .fitSize([width, height], data)
       .rotate([90, 0])
-      .translate([(width/2) - 150, height + height/2 + 100])
+      .translate([(width/2) - 290, height + height/2 + 50])
   }
   
   getPath (projection: d3.GeoProjection) {
@@ -266,7 +266,7 @@ mapBackground (g:any, data: any, path: any, colorScale: any, provinceAnswers: Ma
       .attr('font-size', 20)
       .attr('font-weight', 'bold')
   
-    var legendOrdinal = legendColor()
+    var legendOrdinal = (legendColor() as any)
       .shape('path', d3.symbol().type(d3.symbolCircle).size(300)()!)
       .shapePadding(2)
       .scale(colorScale)
@@ -275,26 +275,76 @@ mapBackground (g:any, data: any, path: any, colorScale: any, provinceAnswers: Ma
       .call(legendOrdinal)
       .selectAll('.swatch')
       .style('stroke', '#000');
+
+    let offset = 0;
+    g.selectAll('.legendOrdinal')
+      .selectAll('.label')
+      .text(function(d: any, i: any, nodes: any){
+        const transform: string = d3.select(nodes[i].parentNode).attr('transform');
+        const parsedY: string = transform.split(',')[1].substring(0, transform.split(',')[1].length - 2);
+        if(parsedY != ' '){
+          d3.select(nodes[i].parentNode)
+          .attr('transform', 'translate( 0 , '+ (parseInt(parsedY) + offset)+')')
+        }
+        if(d.length < 30){
+          return d;
+        }
+        let words: string[] = d.split(' ');
+        let labelStart: string = '';
+        let currentWordIndex: number = 0;
+        while(labelStart.length + words[currentWordIndex].length < 30){
+          labelStart += ' ' + words[currentWordIndex];
+          currentWordIndex++;
+        }
+        
+        let substringOffset: number = 12;
+        while(currentWordIndex <= words.length - 1){
+          let line: string = words[currentWordIndex];
+          currentWordIndex++;
+          while(words[currentWordIndex] && line.length + words[currentWordIndex].length < 30 && currentWordIndex <= words.length - 1){
+            line = line + ' ' + words[currentWordIndex];
+            currentWordIndex++;
+          }
+          
+          if(words[currentWordIndex] && words[currentWordIndex].match(/[.,:!?]/)){
+            line += words[currentWordIndex];
+            currentWordIndex++;
+          }
+          d3.select(nodes[i].parentNode)
+            .append("text")
+            .text(function() {
+              return line;
+            })
+            .attr('y', substringOffset)
+            .attr('x', 20)
+            .attr('dy', '0.64em')
+          offset += 16;
+          substringOffset += 16;
+        }
+        return labelStart;
+      })
+      .each(function(d:any, i:any, nodes:any) {
+        d3.select(nodes[i].parentNode)
+            .attr('dy', '-0.32em')
+      })
+
+    
   }
 
-  drawWallLegend (g: any, width: number, colorScale: any, title: string, height: number) {
+  drawWallLegend (g: any, width: number, colorScale: any, title: string) {
     g.append('g')
       .attr('class', 'legendOrdinal')
-      .attr('transform', 'translate(' + (width/2) + ', ' + (height - 120) +')')
+      .attr('transform', 'translate(' + (width - 20) + ', ' + 50 +')')
       .append('text')
       .text(title)
-      .attr('x',  -40)
+      .attr('x',  -10)
       .attr('y', -20)
       .attr('font-size', 14)
       .attr('font-weight', 'bold')
   
     var legendOrdinal = (legendColor() as any)
       .shape('path', d3.symbol().type(d3.symbolSquare).size(200)()!)
-      .shapePadding(2)
       .scale(colorScale)
-      .orient('horizontal')
-      .shapePadding(15)
-      .title('allo')
     
     g.selectAll('.legendOrdinal')
       .call(legendOrdinal)
