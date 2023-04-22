@@ -215,7 +215,7 @@ export class VizService {
           .attr("y", yScale(d.data.label) + yScale.bandwidth() / 2)
           .attr("text-anchor", "middle")
           .attr("dy", ".35em")
-          .style("fill", "white");
+          .attr('fill', 'black')
         }
         if(i == data[0].length - 1){
           currentGroup++;

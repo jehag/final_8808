@@ -15,6 +15,7 @@ import { QuestionDataHelper } from '../interfaces/question-data-helper';
 export class PhoneComponent implements OnInit {
 
   selectedQuestion: string = "";
+  isMan: boolean = false;
   characterChosen: boolean = false;
   isThemeQuestion: boolean = false;
   themeQuestionsList: string[] = [];
@@ -56,6 +57,7 @@ export class PhoneComponent implements OnInit {
 
   findUserData(man: boolean) {
     this.characterChosen = true;
+    this.isMan = man;
     this.user = this.preprocessService.getUserData(man);
     if(this.isShowingGraph){
       this.getQuestionData();
