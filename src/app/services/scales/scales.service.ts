@@ -20,10 +20,24 @@ export class ScalesService {
     return d3.scaleLinear().domain([0, 100]).range([0, width]);
   }
 
+/**
+ * Defines the scale used to position the bars
+ *
+ * @param {number} height The height of the graph
+ * @param {object} data The data to be used
+ * @returns {*} The band scale in Y
+ */
   setYScale (height: number, data: QuestionData[]) {
     return d3.scaleBand().domain(data.map(function(d) { return d.label; })).range([0, height]).padding(0.4);
   }
 
+  /**
+ * Defines the scale used to position the bars on the wall
+ *
+ * @param {number} height The height of the graph
+ * @param {object} data The data to be used
+ * @returns {*} The band scale in Y
+ */
   setWallYScale(height: number, data: string[]){
     return d3.scaleBand().domain(data).range([0, height]).padding(0.4);
   }
