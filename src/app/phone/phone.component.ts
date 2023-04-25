@@ -33,6 +33,23 @@ export class PhoneComponent implements OnInit {
     myCivilState: true,
   }
 
+  margin: Margin =  {
+    top: 120,
+    right: 200,
+    bottom: 100,
+    left: 150
+  }
+
+  svgSize = {
+    width: 1000,
+    height: 600
+  }
+
+  graphSize = {
+    width: this.svgSize.width - this.margin.right - this.margin.left,
+    height: this.svgSize.height - this.margin.bottom - this.margin.top
+  }
+
   constructor(private preprocessService: PreprocessService, 
     private vizService: VizService,
     private scalesService: ScalesService
@@ -41,10 +58,18 @@ export class PhoneComponent implements OnInit {
   ngOnInit(): void {
   }
 
+  /**
+ * Gets the questions list for the phone
+ *
+ * @returns {string[]} The string list of questions
+ */
   get questions(){
     return this.preprocessService.questionsList;
   }
 
+  /**
+ * Chooses what to do when a checkbox is altered
+ */
   checkBoxChanged(){
     if(this.isShowingGraph){
       if(this.isThemeQuestion){
@@ -55,6 +80,11 @@ export class PhoneComponent implements OnInit {
     }
   }
 
+/**
+ * Defines the user that is currently chosen and resets the graph if necessary
+ *
+ * @param {boolean} man The sex of the user that has been chosen
+ */
   findUserData(man: boolean) {
     this.characterChosen = true;
     this.isMan = man;
@@ -64,6 +94,9 @@ export class PhoneComponent implements OnInit {
     }
   }
 
+/**
+ * Gets the data of the question that has been selected
+ */
   getQuestionData(){
     const symbol = this.preprocessService.getFormattedSymbolWithQuestion(this.selectedQuestion);
     if(symbol.includes('r')){
@@ -84,48 +117,42 @@ export class PhoneComponent implements OnInit {
     }
   }
 
+  /**
+ * Gets the data of the question that has been selected if the questions is a sub question
+ */
   getSubQuestionData() {
     let subQuestionName: string = this.preprocessService.getSubQuestionRealName(this.selectedQuestion, this.selectedSubQuestion);
     let questionDataHelper: QuestionDataHelper = this.preprocessService.getQuestionData(subQuestionName, this.user, this.checkboxChoices);
     this.createGraph(questionDataHelper, this.selectedQuestion + ' ' + this.selectedSubQuestion, this.preprocessService.getProcessedSymbolWithSubQuestionName(subQuestionName));
   }
 
+/**
+ * Creates a bar graph
+ *
+ * @param {QuestionDataHelper} questionDataHelper The data to be shown
+ * @param {string} questionName The name of the question
+ * @param {string} symbol The symbol of the question
+ */
   createGraph(questionDataHelper: QuestionDataHelper, questionName: string, symbol: string){
     this.isShowingGraph = true;
     this.vizService.deleteGraph('#bar-chart');
-    const margin: Margin = {
-      top: 75,
-      right: 200,
-      bottom: 100,
-      left: 150
-    }
 
-    let svgSize = {
-      width: 1000,
-      height: 600
-    }
+    this.vizService.setCanvasSize(this.svgSize.width, this.svgSize.height, '#bar-chart');
 
-    let graphSize = {
-      width: svgSize.width - margin.right - margin.left,
-      height: svgSize.height - margin.bottom - margin.top
-    }
-
-    this.vizService.setCanvasSize(svgSize.width, svgSize.height, '#bar-chart');
-
-    const g = this.vizService.generateG(margin, '.graph');
+    const g = this.vizService.generateG(this.margin, '.graph');
     this.vizService.appendAxes(g);
     this.vizService.appendGraphLabels(g);
-    this.vizService.placeTitle(g, questionName, graphSize.width);
-    this.vizService.positionLabels(g, graphSize.width, graphSize.height);
+    this.vizService.placeTitle(g, questionName, this.graphSize.width);
+    this.vizService.positionLabels(g, this.graphSize.width, this.graphSize.height);
 
     const choice = this.preprocessService.getChoiceFromData(symbol, this.user[symbol])
 
-    const xScale = this.scalesService.setXScale(graphSize.width);
-    const yScale = this.scalesService.setYScale(graphSize.height, questionDataHelper.questionData);
+    const xScale = this.scalesService.setXScale(this.graphSize.width);
+    const yScale = this.scalesService.setYScale(this.graphSize.height, questionDataHelper.questionData.map(function(d) { return d.label;}));
     const colorScale = this.scalesService.setColorScale(['Votre réponse'], ['orange']);
-    this.vizService.drawXAxis(xScale, graphSize.height);
+    this.vizService.drawXAxis(xScale, this.graphSize.height);
     this.vizService.drawYAxis(yScale);
-    this.vizService.drawLegend(g, graphSize.width, colorScale);
+    this.vizService.drawLegend(g, this.graphSize.width, colorScale);
     this.vizService.drawBars(g, questionDataHelper.questionData, xScale, yScale, choice);
     this.amountOfData = questionDataHelper.sumOfValues;
   }

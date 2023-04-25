@@ -4,7 +4,6 @@ import { VizService } from '../services/viz/viz.service';
 import { ScalesService } from '../services/scales/scales.service';
 import { CheckboxChoices } from '../interfaces/checkbox-choices';
 import { ExcelQuestions } from '../interfaces/excel-questions';
-import { QuestionData } from '../interfaces/question-data';
 import { Margin } from '../interfaces/margin';
 import { QuestionDataHelper } from '../interfaces/question-data-helper';
 import { GenderDataSetup } from '../interfaces/gender-data-setup';
@@ -54,7 +53,7 @@ export class WallComponent implements OnInit {
   }
 
   margin: Margin = {
-    top: 75,
+    top: 120,
     right: 200,
     bottom: 100,
     left: 150
@@ -74,62 +73,92 @@ export class WallComponent implements OnInit {
     private vizService: VizService,
     private scalesService: ScalesService) { }
 
+  /**
+ * Gets the Canada data, the wall questions and creates the first graph
+ */
   async ngOnInit() {
     this.mapData = await this.getCanadaData();
     this.questionsList = this.preprocessService.getWallQuestions();
     this.createGraph();
   }
 
+  /**
+ * Gets the Canada data
+ */
   async getCanadaData() {
     return d3.json('assets/data/canada.json').then(function (data) {
       return data;
     })
   }
 
+  /**
+ * Changes the wall to the next graph and creates it
+ */
   nextGraph(){
     this.vizService.deleteGraph('#wall-chart');
-    if(this.graphType == GraphType.Gender){
-      this.graphType = GraphType.Age;
-    } else if (this.graphType == GraphType.Age) {
-      this.graphType = GraphType.Map;
-    } else {
-      if(this.currentQuestion == 49){
-        this.currentQuestion = 0;
-      } else {
-        this.currentQuestion++;
-      }
-      this.graphType = GraphType.Gender;
+    switch(this.graphType){
+      case GraphType.Gender:
+        this.graphType = GraphType.Age;
+        break;
+      case GraphType.Age:
+        this.graphType = GraphType.Map;
+        break;
+      case GraphType.Map:
+        this.graphType = GraphType.Gender;
+        if(this.currentQuestion == 49){
+          this.currentQuestion = 0;
+        } else {
+          this.currentQuestion++;
+        }
+        break;
     }
     this.createGraph();
   }
 
+  /**
+ * Changes the wall to the previous graph and creates it
+ */
   previousGraph(){
     this.vizService.deleteGraph('#wall-chart');
-    if(this.graphType == GraphType.Gender){
-      this.graphType = GraphType.Map;
-      if(this.currentQuestion == 0){
-        this.currentQuestion = 49;
-      } else {
-        this.currentQuestion--;
-      }
-    } else if (this.graphType == GraphType.Age) {
-      this.graphType = GraphType.Gender;
-    } else {
-      this.graphType = GraphType.Age;
+    switch(this.graphType){
+      case GraphType.Gender:
+        this.graphType = GraphType.Map;
+        if(this.currentQuestion == 0){
+          this.currentQuestion = 49;
+        } else {
+          this.currentQuestion--;
+        }
+        break;
+      case GraphType.Age:
+        this.graphType = GraphType.Gender;
+        break;
+      case GraphType.Map:
+        this.graphType = GraphType.Age;
+        break;
     }
     this.createGraph();
   }
 
+  /**
+ * Creates the graph of the current type
+ */
   createGraph() {
-    if(this.graphType == GraphType.Gender){
-      this.createGenderGraph();
-    } else if (this.graphType == GraphType.Age) {
-      this.createAgeGraph();
-    } else {
-      this.createMapGraph();
+    switch(this.graphType){
+      case GraphType.Gender:
+        this.createGenderGraph();
+        break;
+      case GraphType.Age:
+        this.createAgeGraph();
+        break;
+      case GraphType.Map:
+        this.createMapGraph();
+        break;
     }
   }
 
+  /**
+ * Setups a gender graph and creates it
+ */
   createGenderGraph() {
     const genderData: GenderDataSetup[] = this.getGenderData();
     const groups: string[] = ['men', 'women'];
@@ -142,6 +171,11 @@ export class WallComponent implements OnInit {
     this.buildGraph(labels, colors, legendItems, dataset, groups, legendTitle);
   }
 
+  /**
+ * Gets the gender data 
+ * 
+ * @returns {GenderDataSetup[]} The gender data
+ */
   getGenderData(): GenderDataSetup[] {
     this.checkBoxChoices.myGender = true;
     let questionDataList: QuestionDataHelper[] = this.getQuestionData('sexe', 2);
@@ -159,6 +193,9 @@ export class WallComponent implements OnInit {
     return data;
   }
 
+  /**
+ * Setups an age graph and creates it
+ */
   createAgeGraph(){
     const ageData: AgeDataSetup[] = this.getAgeData();
     const groups: string[] = ['firstBracket', 'secondBracket', 'thirdBracket', 'fourthBracket', 'fifthBracket'];
@@ -171,10 +208,16 @@ export class WallComponent implements OnInit {
     this.buildGraph(labels, colors, legendItems, dataset, groups, legendTitle);
   }
 
+  /**
+ * Gets the age data 
+ * 
+ * @returns {AgeDataSetup[]} The age data
+ */
   getAgeData(): AgeDataSetup[] {
     this.checkBoxChoices.myAge = true;
     let questionDataList: QuestionDataHelper[] = this.getQuestionData('age', 5);
     this.checkBoxChoices.myAge = false;
+
     let data: AgeDataSetup[] = [];
     for(let i = 0; i < questionDataList[0].questionData.length; i++){
       const totalSum = questionDataList.reduce((total, current) => total + current.sumOfValues, 0);
@@ -190,6 +233,9 @@ export class WallComponent implements OnInit {
     return data;
   }
 
+  /**
+ * Setups a map graph and creates it
+ */
   createMapGraph(){
     const provinceAnswers: MapDataSetup[] = this.getMapData();
     let choices: string[] = this.preprocessService.getQuestionChoices(this.questionsList[this.currentQuestion]);
@@ -199,59 +245,19 @@ export class WallComponent implements OnInit {
     var projection = this.vizService.getProjection(this.mapData, this.svgSize.width, this.svgSize.height);
     var path = this.vizService.getPath(projection);
     const g = this.vizService.generateG(this.margin, '.wall-graph');
-    const colorscale = this.scalesService.setMapColorScale(choices);
+    
+    const colorscale = this.scalesService.setMapColorScale(choices, this.preprocessService.isGradientQuestion(this.questionsList[this.currentQuestion].symbol));
+
     this.vizService.mapBackground(g, this.mapData, path, colorscale, provinceAnswers);
     this.vizService.placeTitle(g, this.questionsList[this.currentQuestion].question, this.graphSize.width);
     this.vizService.drawMapLegend(g, this.graphSize.width, colorscale);
   }
 
-  getQuestionData(symbol: string, maxNumber: number) : QuestionDataHelper[] {
-    let user: any = {
-      [symbol]: 0
-    };
-    let questionDataList: QuestionDataHelper[] = [];
-    for(let i = 1; i <= maxNumber; i++){
-      user[symbol] = i;
-      if(this.questionsList[this.currentQuestion].symbol.includes('n')){
-        let symbolStart = this.questionsList[this.currentQuestion].symbol.substring(0,this.questionsList[this.currentQuestion].symbol.indexOf('n'));
-        questionDataList.push(this.preprocessService.getNoToQuestionData(symbolStart, user, this.checkBoxChoices));
-      } else {
-        let questionName: string = '';
-        
-        if(this.questionsList[this.currentQuestion].symbol.includes('r')){
-          let questionStart: string = this.questionsList[this.currentQuestion].question.split(' - ')[0].trim();
-          for(let choice of this.questionsList[this.currentQuestion].choices.values()){
-            if(choice.includes(questionStart)){
-              questionName = choice;
-            }
-          }
-        } else {
-          questionName = this.questionsList[this.currentQuestion].question;
-        }
-        questionDataList.push(this.preprocessService.getQuestionData(questionName, user, this.checkBoxChoices))
-      }
-    }
-    return questionDataList;
-  }
-
-  buildGraph(labels: string[], colors: string[], legendItems: string[], dataset: any, groupLabels: string[], legendTitle: string){
-    this.vizService.setCanvasSize(this.svgSize.width, this.svgSize.height, '#wall-chart');
-
-    const g = this.vizService.generateG(this.margin, '.wall-graph');
-    this.vizService.appendAxes(g);
-    this.vizService.appendGraphLabels(g);
-    this.vizService.placeTitle(g, this.questionsList[this.currentQuestion].question, this.graphSize.width);
-    this.vizService.positionLabels(g, this.graphSize.width, this.graphSize.height);
-
-    const xScale = this.scalesService.setXScale(this.graphSize.width);
-    const yScale = this.scalesService.setWallYScale(this.graphSize.height, labels);
-    const colorScale = this.scalesService.setColorScale(legendItems, colors)
-    this.vizService.drawXAxis(xScale, this.graphSize.height);
-    this.vizService.drawYAxis(yScale);
-    this.vizService.drawWallLegend(g, this.graphSize.width, colorScale, legendTitle);
-    this.vizService.drawWallBars(g, dataset, xScale, yScale, colors, groupLabels);
-  }
-
+  /**
+ * Gets the map data 
+ * 
+ * @returns {MapDataSetup[]} The map data
+ */
   getMapData(): MapDataSetup[]{
     this.checkBoxChoices.myProvince = true;
     const questionDataList: QuestionDataHelper[] = this.getQuestionData('PROV', 13);
@@ -282,5 +288,69 @@ export class WallComponent implements OnInit {
     mapData.push({province: labels[11], answer: mostPopularAnswers[Province.Manitoba]});
     mapData.push({province: labels[12], answer: mostPopularAnswers[Province.Ontario]});
     return mapData;
+  }
+
+  /**
+ * Gets a question's data 
+ * 
+ * @param {string} symbol The symbol of the question
+ * @param {number} maxNumber The number of possible groups to get the data
+ * @returns {QuestionDataHelper[]} The question's data
+ */
+  getQuestionData(symbol: string, maxNumber: number) : QuestionDataHelper[] {
+    let user: any = {
+      [symbol]: 0
+    };
+    let questionDataList: QuestionDataHelper[] = [];
+    for(let i = 1; i <= maxNumber; i++){
+      user[symbol] = i;
+      if(this.questionsList[this.currentQuestion].symbol.includes('n')){
+        let symbolStart = this.questionsList[this.currentQuestion].symbol.substring(0,this.questionsList[this.currentQuestion].symbol.indexOf('n'));
+        questionDataList.push(this.preprocessService.getNoToQuestionData(symbolStart, user, this.checkBoxChoices));
+      } else {
+        let questionName: string = '';
+        
+        if(this.questionsList[this.currentQuestion].symbol.includes('r')){
+          let questionStart: string = this.questionsList[this.currentQuestion].question.split(' - ')[0].trim();
+          for(let choice of this.questionsList[this.currentQuestion].choices.values()){
+            if(choice.includes(questionStart)){
+              questionName = choice;
+            }
+          }
+        } else {
+          questionName = this.questionsList[this.currentQuestion].question;
+        }
+        questionDataList.push(this.preprocessService.getQuestionData(questionName, user, this.checkBoxChoices))
+      }
+    }
+    return questionDataList;
+  }
+
+  /**
+ * Builds a stacked bar chart
+ * 
+ * @param {string[]} labels The list of labels to place on the Y scale
+ * @param {string[]} colors The list of colors to draw the stacked bar chart
+ * @param {string[]} legendItems The list of legend items to place in the legend
+ * @param {*} dataset The stacked data
+ * @param {string[]} groupLabels The list of group labels to separate the different stacks of the bar chart
+ * @param {string} legendTitle The title of the legend
+ */
+  buildGraph(labels: string[], colors: string[], legendItems: string[], dataset: any, groupLabels: string[], legendTitle: string){
+    this.vizService.setCanvasSize(this.svgSize.width, this.svgSize.height, '#wall-chart');
+
+    const g = this.vizService.generateG(this.margin, '.wall-graph');
+    this.vizService.appendAxes(g);
+    this.vizService.appendGraphLabels(g);
+    this.vizService.placeTitle(g, this.questionsList[this.currentQuestion].question, this.graphSize.width);
+    this.vizService.positionLabels(g, this.graphSize.width, this.graphSize.height);
+
+    const xScale = this.scalesService.setXScale(this.graphSize.width);
+    const yScale = this.scalesService.setYScale(this.graphSize.height, labels);
+    const colorScale = this.scalesService.setColorScale(legendItems, colors)
+    this.vizService.drawXAxis(xScale, this.graphSize.height);
+    this.vizService.drawYAxis(yScale);
+    this.vizService.drawWallLegend(g, this.graphSize.width, colorScale, legendTitle);
+    this.vizService.drawWallBars(g, dataset, xScale, yScale, colors, groupLabels);
   }
 }

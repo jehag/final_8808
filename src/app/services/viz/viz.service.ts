@@ -1,10 +1,8 @@
 import { Injectable } from '@angular/core';
 import * as d3 from 'd3';
 import { Margin } from 'src/app/interfaces/margin';
-import { legendColor, legendSymbol } from 'd3-svg-legend';
+import { legendColor } from 'd3-svg-legend';
 import { QuestionData } from 'src/app/interfaces/question-data';
-import { QuestionDataHelper } from 'src/app/interfaces/question-data-helper';
-import { GenderDataSetup } from 'src/app/interfaces/gender-data-setup';
 import { MapDataSetup } from 'src/app/interfaces/map-data-setup';
 
 @Injectable({
@@ -13,6 +11,14 @@ import { MapDataSetup } from 'src/app/interfaces/map-data-setup';
 export class VizService {
 
   constructor() { }
+
+  /**
+ * Generates the SVG element g which will contain the graph base.
+ *
+ * @param {Margin} Margin The margin of the page
+ * @param {string} graphClass The name of the class of the graph
+ * @returns {*} The d3 Selection for the created g element
+ */
   generateG (margin: Margin, graphClass: string) {
     return d3.select(graphClass)
       .select('svg')
@@ -21,12 +27,24 @@ export class VizService {
         'translate(' + margin.left + ',' + margin.top + ')')
   }
 
+  /**
+ * Sets the size of the SVG canvas containing the graph.
+ *
+ * @param {number} width The desired width
+ * @param {number} height The desired height
+ * @param {string} graphId The name of the Id of the graph
+ */
   setCanvasSize (width: number, height: number, graphId: string) {
     d3.select(graphId)
       .attr('width', width)
       .attr('height', height)
   }
 
+  /**
+ * Appends SVG g elements which will contain the axes.
+ *
+ * @param {*} g The d3 Selection of the graph's g SVG element
+ */
   appendAxes (g: any) {
     g.append('g')
       .attr('class', 'x axis')
@@ -36,6 +54,11 @@ export class VizService {
       .style('width', 150)
   }
 
+  /**
+ * Appends the labels for the x axis
+ *
+ * @param {*} g The d3 Selection of the graph's g SVG element
+ */
   appendGraphLabels (g: any) {
     g.append('text')
       .text('Pourcentage (%)')
@@ -43,12 +66,19 @@ export class VizService {
       .attr('font-size', 12)
   }
 
+  /**
+ * Places the graph's title.
+ *
+ * @param {*} g The d3 Selection of the graph's g SVG element
+ * @param {string} title The name of the graph
+ * @param {number} width The width of the graph
+ */
   placeTitle (g: any, title: string, width: number) {
     if(title.length > 60){
 
       let words: string[] = title.split(' ');
       let i: number = 0;
-      let j: number = -55;
+      let j: number = -75;
       while(i <= words.length - 1){
         let line: string = words[i];
         i++;
@@ -64,24 +94,33 @@ export class VizService {
 
         g.append('text')
         .attr('class', 'title')
-        .attr('x', width/2)
+        .attr('x', 0)
         .attr('y', j)
         .attr('font-size', '20px')
-        .attr('text-anchor', 'middle')
+        .attr('text-anchor', 'left')
+        .attr('margin-top', '20px')
         .text(line)
         j = j + 20;
       }
     } else {
       g.append('text')
       .attr('class', 'title')
-      .attr('x', width/2)
-      .attr('y', -20)
+      .attr('x', 0)
+      .attr('y', -40)
       .attr('font-size', '20px')
-      .attr('text-anchor', 'middle')
+      .attr('text-anchor', 'left')
+      .attr('margin-top', '20px')
       .text(title)
     }
   }
 
+  /**
+ * Positions the x axis label and y axis label.
+ *
+ * @param {*} g The d3 Selection of the graph's g SVG element
+ * @param {number} width The width of the graph
+ * @param {number} height The height of the graph
+ */
   positionLabels (g: any, width: number, height: number) {
     g.selectAll('.y.axis-text')
       .attr('transform', 'translate( -50 ,' + height / 2 + '), rotate(-90)')
@@ -90,12 +129,23 @@ export class VizService {
       .attr('transform', 'translate(' + width / 2 + ',' + (height + 50) + ')')
   }
 
+/**
+ * Draws the X axis at the bottom of the diagram.
+ *
+ * @param {*} xScale The scale to use to draw the axis
+ * @param {number} height The height of the graph
+ */
   drawXAxis (xScale: any, height: number) {
     d3.select('.x.axis')
       .attr('transform', 'translate( 0, ' + height + ')')
       .call(d3.axisBottom(xScale).tickSizeOuter(0).tickArguments([5, '~s']) as any)
   }
 
+  /**
+ * Draws the Y axis to the left of the diagram.
+ *
+ * @param {*} yScale The scale to use to draw the axis
+ */
   drawYAxis (yScale: any) {
     d3.select('.y.axis')
       .call(d3.axisLeft(yScale).tickSizeOuter(0).tickArguments([5, '.0r']) as any);
@@ -155,6 +205,13 @@ export class VizService {
     })
   }
 
+  /**
+ * Draws the legend for the phone
+ *
+ * @param {*} g The d3 Selection of the graph's g SVG element
+ * @param {number} width The width of the graph, used to place the legend
+ * @param {*} colorScale The color scale to use
+ */
   drawLegend (g: any, width: number, colorScale: any) {
     g.append('g')
       .attr('class', 'legendOrdinal')
@@ -170,6 +227,15 @@ export class VizService {
       .call(legendOrdinal)
   }
 
+  /**
+ * Displays the bars for the phone graph
+ *
+ * @param {*} g The d3 Selection of the graph's g SVG element
+ * @param {*} data The data to be displayed
+ * @param {*} xScale The scale to use to draw on the x axis
+ * @param {*} yScale The scale to use to draw on the y axis
+ * @param {*} userChoice The user's choice
+ */
   drawBars(g:any, data: QuestionData[], xScale:any, yScale:any, userChoice: string) {
     g.selectAll(".bar")
       .data(data)
@@ -181,11 +247,26 @@ export class VizService {
       .attr("height", yScale.bandwidth());
   }
 
+  /**
+ * Deletes the graph
+ *
+ * @param {string} graphId The id of the graph
+ */
   deleteGraph(graphId: string){
     const g = d3.select(graphId).selectAll('*').remove();
     g.remove();
   }
 
+  /**
+ * Displays the bars for the wall graph
+ *
+ * @param {*} g The d3 Selection of the graph's g SVG element
+ * @param {*} data The data to be displayed
+ * @param {*} xScale The scale to use to draw on the x axis
+ * @param {*} yScale The scale to use to draw on the y axis
+ * @param {string[]} colors The colors to be used for the bars
+ * @param {string []} groupLabels All the labels of the groups
+ */
   drawWallBars(g:any, data: any, xScale:any, yScale:any, colors: string[], groupLabels: string[]){
     let currentGroup = 0;
     var groups = g
@@ -224,10 +305,25 @@ export class VizService {
 
   }
 
+  /**
+ * Stacks the data to make a stacked bar chart
+ *
+ * @param {*} data The street data to be displayed
+ * @param {string []} keys All the keys to be stacked
+ */
   stackData(data: any[], keys: string[]) {
     return d3.stack().keys(keys)(data);
   }
 
+  /**
+ * Draws the map base of Canada. Each province should display a color based it's most popular answer
+ *
+ * @param {*} g The d3 Selection of the graph's g SVG element
+ * @param {*} data The Canada data
+ * @param {*} path The path associated with the current projection
+ * @param {*} colorScale The scale to use to add colors to the map
+ * @param {MapDataSetup[]} provinceAnswers The data to be displayed
+ */
 mapBackground (g:any, data: any, path: any, colorScale: any, provinceAnswers: MapDataSetup[]) {
     g.append('g')
     .selectAll('path')
@@ -243,6 +339,11 @@ mapBackground (g:any, data: any, path: any, colorScale: any, provinceAnswers: Ma
     .style('stroke', 'black')
   }
 
+  /**
+ * Sets up the projection to be used.
+ *
+ * @returns {*} The projection to use to trace the map elements
+ */
   getProjection (data: any, width: number, height:number) {
     return d3.geoAzimuthalEquidistant()
       .fitSize([width, height], data)
@@ -250,11 +351,24 @@ mapBackground (g:any, data: any, path: any, colorScale: any, provinceAnswers: Ma
       .translate([(width/2) - 290, height + height/2 + 50])
   }
   
+  /**
+ * Sets up the path to be used.
+ *
+ * @param {*} projection The projection used to trace the map elements
+ * @returns {*} The path to use to trace the map elements
+ */
   getPath (projection: d3.GeoProjection) {
     return d3.geoPath()
       .projection(projection)
   }
 
+  /**
+ * Draws the map legend.
+ *
+ * @param {*} g The d3 Selection of the graph's g SVG element
+ * @param {number} width The width of the graph, used to place the legend
+ * @param {*} colorScale The color scale to use
+ */
   drawMapLegend (g:any, width: number, colorScale: any) {
     g.append('g')
       .attr('class', 'legendOrdinal')
@@ -337,6 +451,14 @@ mapBackground (g:any, data: any, path: any, colorScale: any, provinceAnswers: Ma
     
   }
 
+  /**
+ * Draws the legend for the wall
+ *
+ * @param {*} g The d3 Selection of the graph's g SVG element
+ * @param {number} width The width of the graph, used to place the legend
+ * @param {*} colorScale The color scale to use
+ * @param {string} title The legend's title
+ */
   drawWallLegend (g: any, width: number, colorScale: any, title: string) {
     g.append('g')
       .attr('class', 'legendOrdinal')
