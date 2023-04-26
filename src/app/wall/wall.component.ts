@@ -56,11 +56,11 @@ export class WallComponent implements OnInit {
     top: 120,
     right: 200,
     bottom: 100,
-    left: 150
+    left: 250
   }
   
   svgSize = {
-    width: 1000,
+    width: 1100,
     height: 600
   }
 

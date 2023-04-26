@@ -48,10 +48,11 @@ export class VizService {
   appendAxes (g: any) {
     g.append('g')
       .attr('class', 'x axis')
+      .style('transform', 'translate(10px, 380px)')
   
     g.append('g')
       .attr('class', 'y axis')
-      .style('width', 150)
+      .style('transform', 'translate(10px, 0px)')
   }
 
   /**
@@ -147,27 +148,28 @@ export class VizService {
  * @param {*} yScale The scale to use to draw the axis
  */
   drawYAxis (yScale: any) {
+    const maxLineLength = 35;
     d3.select('.y.axis')
       .call(d3.axisLeft(yScale).tickSizeOuter(0).tickArguments([5, '.0r']) as any);
     d3.select('.y.axis').selectAll('.tick').select('text').text(function(d: any) {
-      if(d.length <= 30){
+      if(d.length <= maxLineLength){
         return d;
       } else {
         const splitLabel = d.split(' ');
         let labelStart: string = '';
         let i: number = 0;
-        while(labelStart.length + splitLabel[i].length < 30){
+        while(splitLabel[i] && labelStart.length + splitLabel[i].length < maxLineLength){
           labelStart += ' ' + splitLabel[i];
           i++;
         }
         return labelStart;
       }
     }).each(function(d: any, i: any, nodes: any) {
-      if(d.length > 30){
+      if(d.length > maxLineLength){
         let words: string[] = d.split(' ');
         let labelStart: string = '';
         let currentWordIndex: number = 0;
-        while(labelStart.length + words[currentWordIndex].length < 30){
+        while(labelStart.length + words[currentWordIndex].length < maxLineLength){
           labelStart += ' ' + words[currentWordIndex];
           currentWordIndex++;
         }
@@ -175,7 +177,7 @@ export class VizService {
         while(currentWordIndex <= words.length - 1){
           let line: string = words[currentWordIndex];
           currentWordIndex++;
-          while(words[currentWordIndex] && line.length + words[currentWordIndex].length < 30 && currentWordIndex <= words.length - 1){
+          while(words[currentWordIndex] && line.length + words[currentWordIndex].length < maxLineLength && currentWordIndex <= words.length - 1){
             line = line + ' ' + words[currentWordIndex];
             currentWordIndex++;
           }
@@ -215,7 +217,7 @@ export class VizService {
   drawLegend (g: any, width: number, colorScale: any) {
     g.append('g')
       .attr('class', 'legendOrdinal')
-      .attr('transform', 'translate(' + (width + 20) + ', 200)')
+      .attr('transform', 'translate(' + (width + 30) + ', 200)')
   
     var legendOrdinal = legendColor()
       .shape('path', d3.symbol().type(d3.symbolCircle).size(300)()!)
@@ -242,6 +244,7 @@ export class VizService {
       .enter().append("rect")
       .attr("class", "bar")
       .attr("y", function(d: QuestionData) { return yScale(d.label); })
+      .attr('x', '10px')
       .style('fill', function (d: QuestionData) { return d.label == userChoice? 'orange': 'green'; })
       .attr("width", function(d: QuestionData) { return xScale(d.value); })
       .attr("height", yScale.bandwidth());
@@ -281,7 +284,7 @@ export class VizService {
       .data(function(d: any) { return d; })
       .enter()
       .append("rect")
-      .attr("x", function(d: any) { return xScale(Math.round(d[0])); })
+      .attr("x", function(d: any) { return xScale(Math.round(d[0])) + 10; })
       .attr("y", function(d: any) { return yScale(d.data.label); })
       .attr("height", yScale.bandwidth())
       .attr("width", function(d: any) { return xScale(Math.round(d[1])) - xScale(Math.round(d[0]));})
@@ -292,7 +295,7 @@ export class VizService {
           .text(function() {
             return Math.round(d.data[groupLabels[currentGroup]]) + "%"
           })
-          .attr("x", xScale(d[0]) + (xScale(d[1]) - xScale(d[0])) / 2)
+          .attr("x", (xScale(d[0]) + (xScale(d[1]) - xScale(d[0])) / 2) + 10)
           .attr("y", yScale(d.data.label) + yScale.bandwidth() / 2)
           .attr("text-anchor", "middle")
           .attr("dy", ".35em")
