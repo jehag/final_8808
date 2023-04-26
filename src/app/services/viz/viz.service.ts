@@ -333,6 +333,7 @@ mapBackground (g:any, data: any, path: any, colorScale: any, provinceAnswers: Ma
     .data(data.features)
     .enter()
     .append('path')
+    .attr('transform','translate(' + -50 + ',0)')
     .attr('d', path)
     .attr('fill', function(d: any){ 
       const province = provinceAnswers.find((province) => {
